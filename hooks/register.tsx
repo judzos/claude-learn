@@ -15,6 +15,7 @@ import {
   explainFeedbackLines,
   explainResultText,
   grade,
+  healArguments,
   interpretAnswer,
   interpretExplain,
   isSilentCommand,
@@ -86,16 +87,28 @@ import {
   PLAN_DESCRIPTION,
   PLAN_SCHEMA,
   PLAN_TOOL,
+  PROBE_DESCRIPTION,
   PROBE_DONE_DESCRIPTION,
   PROBE_DONE_SCHEMA,
   PROBE_DONE_TOOL,
+  PROBE_SCHEMA,
+  PROBE_TOOL,
   PROBLEM_DESCRIPTION,
   PROBLEM_SCHEMA,
   PROBLEM_TOOL,
   QUIZ_DESCRIPTION,
   QUIZ_SCHEMA,
   QUIZ_TOOL,
+  RECALL_DESCRIPTION,
+  RECALL_SCHEMA,
+  RECALL_TOOL,
+  GRADED_TOOLS,
+  MULTIPLE_CHOICE_TOOLS,
+  TEACH_QUESTION_TOOLS,
   isPluginScript,
+  offersTool,
+  parseQuizType,
+  type QuizType,
 } from './tools'
 import type { PlanView } from '../types'
 
@@ -107,6 +120,7 @@ const planView = atom({ plugin: 'learn', key: 'plan' } as const, null as PlanVie
 let learnDirOption = '~/Desktop/learn'
 let graphModel = 'sonnet'
 let askConfidence = true
+let quizType: QuizType = 'both'
 
 // --- per-session lesson state, kept in $.store so a reload keeps it ---
 
@@ -218,7 +232,7 @@ function askAnswerBlock(input: any, result: any): string {
   return askAnswerCallout(lines.length ? lines : Object.values(answers).map(String))
 }
 
-const LEARN_TOOLS = new Set([QUIZ_TOOL, EXPLAIN_TOOL, PROBE_DONE_TOOL, PLAN_TOOL, PROBLEM_TOOL, CONCLUDE_TOOL])
+const LEARN_TOOLS = new Set([...GRADED_TOOLS, PROBE_DONE_TOOL, PLAN_TOOL, PROBLEM_TOOL, CONCLUDE_TOOL])
 
 // Rebuild the whole log from the transcript, as pi's /md-log did on link.
 async function backfill($: EngineInterface): Promise<number> {
@@ -238,7 +252,7 @@ async function backfill($: EngineInterface): Promise<number> {
       if (LEARN_TOOLS.has(use.tool)) {
         const saved = (await $.store.get(`blocks:${use.tool_use_id}`)) as string[] | undefined
         if (saved) blocks.push(...saved)
-        else if (use.tool === QUIZ_TOOL) {
+        else if (MULTIPLE_CHOICE_TOOLS.has(use.tool)) {
           // quizzes logged before blocks were kept per call
           const old = (await $.store.get(`quiz:${use.tool_use_id}`)) as { question?: string; answer?: string } | undefined
           if (old?.question) blocks.push(old.question)
@@ -372,20 +386,31 @@ async function refreshPlan($: EngineInterface, lesson: Lesson): Promise<void> {
   showStatus($)
 }
 
-// Tags move the map; once a plan exists, every question names its node and role.
-function checkRole(lesson: Lesson, input: { type?: unknown; nodeId?: unknown }, toolName: string): string | undefined {
-  if (!lesson.plan) return undefined
+// The phase decides the tool: probe/recall before the plan, quiz/explain (with
+// a node and a role, which move the map) once it exists.
+function checkPhase(lesson: Lesson, input: { type?: unknown; nodeId?: unknown }, tool: string): string | undefined {
+  const name = tool.replace('mcp__learn__', '')
+  const teachName = MULTIPLE_CHOICE_TOOLS.has(tool) ? 'quiz' : 'explain'
+  const probeName = MULTIPLE_CHOICE_TOOLS.has(tool) ? 'probe' : 'recall'
+  if (!TEACH_QUESTION_TOOLS.has(tool)) {
+    if (!lesson.plan) return undefined
+    const ids = lesson.plan.nodes.map(n => n.id)
+    return `${name}: this session has a plan, so graded questions go through ${teachName}, with \`type\` ("predict" or "check") and \`nodeId\` (${ids.join(', ')}). For an off-map question use AskUserQuestion.`
+  }
+  if (!lesson.plan) {
+    return `${name}: no plan exists yet. While probing (or outside a lesson) use ${probeName}, with no type or nodeId; ${name} is for teaching against the plan.`
+  }
   const ids = lesson.plan.nodes.map(n => n.id)
   const problems: string[] = []
   if (input.type !== 'predict' && input.type !== 'check') {
-    problems.push('`type` is required once the session has a plan: "predict" before teaching a step, "check" after it.')
+    problems.push('`type` is required: "predict" before teaching a step, "check" after it.')
   }
   if (typeof input.nodeId !== 'string' || !ids.includes(input.nodeId)) {
     problems.push(
-      `\`nodeId\` ${typeof input.nodeId === 'string' ? `"${input.nodeId}" is not a node of the plan` : 'is required once the session has a plan'}. Valid ids: ${ids.join(', ')}. For an off-map question use AskUserQuestion.`,
+      `\`nodeId\` ${typeof input.nodeId === 'string' ? `"${input.nodeId}" is not a node of the plan` : 'is required'}. Valid ids: ${ids.join(', ')}. For an off-map question use AskUserQuestion.`,
     )
   }
-  return problems.length ? `${toolName}: ${problems.join(' ')}` : undefined
+  return problems.length ? `${name}: ${problems.join(' ')}` : undefined
 }
 
 const roleLabel = (type: unknown, fallback: string) => (type === 'predict' ? 'Prediction' : type === 'check' ? 'Check' : fallback)
@@ -416,8 +441,8 @@ async function ask($: EngineInterface, question: string, options: string[], head
 
 // --- quiz ---
 
-async function runQuiz($: EngineInterface, input: QuizInput & { type?: string; nodeId?: string }, toolUseId: string | undefined): Promise<string> {
-  const roleProblem = checkRole(await getLesson($), input, 'quiz')
+async function runQuiz($: EngineInterface, input: QuizInput & { tool: string; type?: string; nodeId?: string }, toolUseId: string | undefined): Promise<string> {
+  const roleProblem = checkPhase(await getLesson($), input, input.tool)
   if (roleProblem) throw new Error(roleProblem)
   const authored = normalizeOptions(input.options)
   const options = input.shuffle === false ? authored : shuffled(authored)
@@ -463,7 +488,7 @@ async function runQuiz($: EngineInterface, input: QuizInput & { type?: string; n
 // --- explain (free recall) ---
 
 async function runExplain($: EngineInterface, input: any, toolUseId: string | undefined): Promise<string> {
-  const roleProblem = checkRole(await getLesson($), input, 'explain')
+  const roleProblem = checkPhase(await getLesson($), input, input.tool)
   if (roleProblem) throw new Error(roleProblem)
   const committed = String(input.correctAnswer ?? '').trim()
   if (!input.question?.trim()) throw new Error('question is required')
@@ -798,8 +823,10 @@ async function runTool($: EngineInterface, e: any): Promise<string> {
   const id: string | undefined = e.tool_use_id
   switch (e.tool) {
     case QUIZ_TOOL:
+    case PROBE_TOOL:
       return runQuiz($, e, id)
     case EXPLAIN_TOOL:
+    case RECALL_TOOL:
       return runExplain($, e, id)
     case PROBE_DONE_TOOL:
       return runProbeDone($, e, id)
@@ -822,9 +849,24 @@ async function runTool($: EngineInterface, e: any): Promise<string> {
   }
 }
 
+// Each learn tool's schema, for the argument heal.
+const SCHEMAS: Record<string, { properties?: Record<string, any> }> = {
+  [QUIZ_TOOL]: QUIZ_SCHEMA,
+  [EXPLAIN_TOOL]: EXPLAIN_SCHEMA,
+  [PROBE_TOOL]: PROBE_SCHEMA,
+  [RECALL_TOOL]: RECALL_SCHEMA,
+  [PROBE_DONE_TOOL]: PROBE_DONE_SCHEMA,
+  [PLAN_TOOL]: PLAN_SCHEMA,
+  [PROBLEM_TOOL]: PROBLEM_SCHEMA,
+  [CONCLUDE_TOOL]: CONCLUDE_SCHEMA,
+  [GRAPH_PROPOSITIONS_TOOL]: GRAPH_PROPOSITIONS_SCHEMA,
+  [GRAPH_FIND_TOOL]: GRAPH_FIND_SCHEMA,
+}
+
 async function serveTool($: EngineInterface, e: any) {
   try {
-    return { result: await runTool($, e) }
+    const schema = SCHEMAS[e.tool]
+    return { result: await runTool($, schema ? healArguments(e, schema) : e) }
   } catch (err) {
     return { deny: fail(err) }
   }
@@ -839,6 +881,8 @@ function toolFailed($: EngineInterface, e: any, next: any) {
 const HIDDEN: Record<string, string[]> = {
   [QUIZ_TOOL]: ['correctAnswer', 'explanation'],
   [EXPLAIN_TOOL]: ['correctAnswer'],
+  [PROBE_TOOL]: ['correctAnswer', 'explanation'],
+  [RECALL_TOOL]: ['correctAnswer'],
   [PROBLEM_TOOL]: ['modelSolution'],
 }
 
@@ -877,6 +921,7 @@ export const register: Register = (on, options) => {
   learnDirOption = String(options?.learnDir ?? '~/Desktop/learn')
   graphModel = String(options?.graphModel ?? '').trim() || 'sonnet'
   askConfidence = options?.askConfidence !== false
+  quizType = parseQuizType(options?.quizType)
 
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'learn', description: 'How to use the learning setup' })
@@ -886,8 +931,16 @@ export const register: Register = (on, options) => {
     await $.command.register({ name: 'graph', description: 'Extract this session into the knowledge graph' })
     await $.command.register({ name: 'graph-import', description: 'Import a markdown note into the knowledge graph', argumentHint: '<note.md>' })
 
-    await $.tool.register({ name: 'quiz', description: QUIZ_DESCRIPTION, inputSchema: QUIZ_SCHEMA, isDeferred: false })
-    await $.tool.register({ name: 'explain', description: EXPLAIN_DESCRIPTION, inputSchema: EXPLAIN_SCHEMA })
+    // Only the mechanics the quiz-type setting arms are offered. The
+    // probe-phase tool is always loaded: it opens every lesson and serves a
+    // graded question outside one.
+    const questionTools = [
+      { tool: PROBE_TOOL, name: 'probe', description: PROBE_DESCRIPTION, inputSchema: PROBE_SCHEMA, isDeferred: false },
+      { tool: RECALL_TOOL, name: 'recall', description: RECALL_DESCRIPTION, inputSchema: RECALL_SCHEMA, isDeferred: quizType !== 'free' },
+      { tool: QUIZ_TOOL, name: 'quiz', description: QUIZ_DESCRIPTION, inputSchema: QUIZ_SCHEMA, isDeferred: true },
+      { tool: EXPLAIN_TOOL, name: 'explain', description: EXPLAIN_DESCRIPTION, inputSchema: EXPLAIN_SCHEMA, isDeferred: true },
+    ]
+    for (const { tool, ...spec } of questionTools) if (offersTool(quizType, tool)) await $.tool.register(spec)
     await $.tool.register({ name: 'probe_done', description: PROBE_DONE_DESCRIPTION, inputSchema: PROBE_DONE_SCHEMA })
     await $.tool.register({ name: 'plan', description: PLAN_DESCRIPTION, inputSchema: PLAN_SCHEMA })
     await $.tool.register({ name: 'problem', description: PROBLEM_DESCRIPTION, inputSchema: PROBLEM_SCHEMA })
@@ -974,6 +1027,8 @@ export const register: Register = (on, options) => {
 
   on('tool.call', { tool: QUIZ_TOOL }, serveTool).catch(toolFailed)
   on('tool.call', { tool: EXPLAIN_TOOL }, serveTool).catch(toolFailed)
+  on('tool.call', { tool: PROBE_TOOL }, serveTool).catch(toolFailed)
+  on('tool.call', { tool: RECALL_TOOL }, serveTool).catch(toolFailed)
   on('tool.call', { tool: PROBE_DONE_TOOL }, serveTool).catch(toolFailed)
   on('tool.call', { tool: PLAN_TOOL }, serveTool).catch(toolFailed)
   on('tool.call', { tool: PROBLEM_TOOL }, serveTool).catch(toolFailed)
@@ -987,11 +1042,15 @@ export const register: Register = (on, options) => {
   // explanations or model solutions while he works.
   on('ui.render', { component: 'ToolUse', props: { tool: QUIZ_TOOL } }, hideAnswers)
   on('ui.render', { component: 'ToolUse', props: { tool: EXPLAIN_TOOL } }, hideAnswers)
+  on('ui.render', { component: 'ToolUse', props: { tool: PROBE_TOOL } }, hideAnswers)
+  on('ui.render', { component: 'ToolUse', props: { tool: RECALL_TOOL } }, hideAnswers)
   on('ui.render', { component: 'ToolUse', props: { tool: PROBLEM_TOOL } }, hideAnswers)
 
   // Under a question or a concluded problem: the feedback he has earned.
   on('ui.render', { component: 'ToolResult', props: { tool: QUIZ_TOOL } }, drawFeedback)
   on('ui.render', { component: 'ToolResult', props: { tool: EXPLAIN_TOOL } }, drawFeedback)
+  on('ui.render', { component: 'ToolResult', props: { tool: PROBE_TOOL } }, drawFeedback)
+  on('ui.render', { component: 'ToolResult', props: { tool: RECALL_TOOL } }, drawFeedback)
   on('ui.render', { component: 'ToolResult', props: { tool: CONCLUDE_TOOL } }, drawFeedback)
 
   // --- the plan pane ---

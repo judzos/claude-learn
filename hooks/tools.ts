@@ -4,6 +4,8 @@
 
 export const QUIZ_TOOL = 'mcp__learn__quiz'
 export const EXPLAIN_TOOL = 'mcp__learn__explain'
+export const PROBE_TOOL = 'mcp__learn__probe'
+export const RECALL_TOOL = 'mcp__learn__recall'
 export const PROBE_DONE_TOOL = 'mcp__learn__probe_done'
 export const PLAN_TOOL = 'mcp__learn__plan'
 export const PROBLEM_TOOL = 'mcp__learn__problem'
@@ -13,85 +15,153 @@ export const GRAPH_PROPOSITIONS_TOOL = 'mcp__learn__graph_propositions'
 export const GRAPH_FIND_TOOL = 'mcp__learn__graph_find'
 export const GRAPH_EXTRACT_TOOL = 'mcp__learn__graph_extract'
 
+// The graded questions come in two phases with different names, as in
+// LearnHarness: probe/recall before the plan (no position fields), quiz/explain
+// after it (type and nodeId required). One shared name let the model carry the
+// probe-phase call shape into teaching and drop nodeId.
+export const MULTIPLE_CHOICE_TOOLS = new Set([QUIZ_TOOL, PROBE_TOOL])
+export const FREE_RECALL_TOOLS = new Set([EXPLAIN_TOOL, RECALL_TOOL])
+export const GRADED_TOOLS = new Set([...MULTIPLE_CHOICE_TOOLS, ...FREE_RECALL_TOOLS])
+export const TEACH_QUESTION_TOOLS = new Set([QUIZ_TOOL, EXPLAIN_TOOL])
+
 const ROLE_FIELDS = {
   type: {
     type: 'string',
     enum: ['predict', 'check'],
     description:
-      "The question's role in the teaching cycle. Required once the session has a plan. predict: posed BEFORE you teach the step, about the untaught next step (an attempt at discovery). check: posed AFTER the step's teaching, to verify it landed. Omit both fields while probing (before any plan).",
+      "REQUIRED. The question's role in the teaching cycle. predict: posed BEFORE you teach the step, about the untaught next step (an attempt at discovery). check: posed AFTER the step's teaching, to verify it landed.",
   },
   nodeId: {
     type: 'string',
-    description: "The plan node this question is about, an exact id from this session's plan. Required once the session has a plan; validated against it. For off-map questions use AskUserQuestion.",
+    description: "REQUIRED. The plan node this question is about, an exact id from this session's plan; validated against it. For off-map questions use AskUserQuestion.",
   },
 }
 
-export const QUIZ_DESCRIPTION = `Ask the learner a GRADED multiple-choice question with a known correct answer, then instantly grade and give feedback. Unlike AskUserQuestion (which collects preferences/decisions with no right answer), quiz always has a correct answer supplied by you, marks his selection right/wrong (✓/✗), reveals the correct answer, and shows your explanation. Single-select or multi-select, plus an automatic "I don't know" choice so he can signal a genuine gap instead of guessing.
+const QUIZ_EXAMPLE = {
+  question: 'A signal is $y=\\sin(2x)$ and $\\frac{dx}{dt}=3$. What is $\\frac{dy}{dt}$?',
+  options: [
+    { label: '$6\\cos(2x)$', value: 'a' },
+    { label: '$2\\cos(2x)$', value: 'b' },
+    { label: '$3\\cos(2x)$', value: 'c' },
+  ],
+  explanation: "The phase changes twice as fast as $x$; multiply by the sine's slope:\n$$\n\\frac{dy}{dt}=\\cos(2x)\\cdot2\\cdot3=6\\cos(2x)\n$$",
+  correctAnswer: 'a',
+}
+
+function quizDescription(name: 'quiz' | 'probe'): string {
+  const teach = name === 'quiz'
+  const phase = teach
+    ? `- For the teaching phase, once the session has a plan (the plan tool): every call carries type and nodeId. Before the plan exists, use probe instead.`
+    : `- For questions before the session has a plan: probing his understanding, or a graded question outside any lesson. No type or nodeId. Once a plan exists, use quiz instead.`
+  const example = teach ? { type: 'check', nodeId: 'chain-rule', ...QUIZ_EXAMPLE } : QUIZ_EXAMPLE
+  return `Ask the learner a GRADED multiple-choice question with a known correct answer, then instantly grade and give feedback. Unlike AskUserQuestion (which collects preferences/decisions with no right answer), ${name} always has a correct answer supplied by you, marks his selection right/wrong (✓/✗), reveals the correct answer, and shows your explanation. Single-select or multi-select, plus an automatic "I don't know" choice so he can signal a genuine gap instead of guessing.
 
 Right after his pick, a second short dialog asks how sure he is (95 / 75 / 50 / 25%), where he can also type a percentage and his thinking. The result gives you the verdict, his confidence and his thinking.
 
 Mechanics:
+${phase}
 - correctAnswer is the option value, not a position. Single-select: one string; multi-select: an array, graded as an exact-set match. A value that matches no option is a hard error. Write explanation (why the correct option is correct) BEFORE correctAnswer: reason it out first, then commit.
 - 2 or 3 options (the dialog holds 4 and one is "I don't know", added automatically; never add your own opt-out option). Options are shuffled unless shuffle is false.
 - He may type his own answer instead of picking; it comes back ungraded for you to grade.
-- Once the session has a plan (the plan tool), every call carries type and nodeId; before that, omit them.
-- ONE question per turn: call a single quiz, then end your turn; his answer determines the next.
+- ONE question per turn: call a single ${name}, then end your turn; his answer determines the next.
 - Every field renders markdown and LaTeX. Inside JSON strings a LaTeX backslash is \\\\ and a newline is \\n.
 
 Example arguments:
-{"type":"check","nodeId":"chain-rule","question":"A signal is $y=\\\\sin(2x)$ and $\\\\frac{dx}{dt}=3$. What is $\\\\frac{dy}{dt}$?","options":[{"label":"$6\\\\cos(2x)$","value":"a"},{"label":"$2\\\\cos(2x)$","value":"b"},{"label":"$3\\\\cos(2x)$","value":"c"}],"explanation":"The phase changes twice as fast as $x$; multiply by the sine's slope:\\n$$\\n\\\\frac{dy}{dt}=\\\\cos(2x)\\\\cdot2\\\\cdot3=6\\\\cos(2x)\\n$$","correctAnswer":"a"}
-(The nodeId is illustrative: copy an exact id from this session's plan.)`
+${JSON.stringify(example)}${teach ? "\n(The nodeId is illustrative: copy an exact id from this session's plan.)" : ''}`
+}
 
-export const QUIZ_SCHEMA = {
-  type: 'object',
-  properties: {
-    ...ROLE_FIELDS,
-    question: { type: 'string', description: 'The single question to ask. Exactly one question per call.' },
-    details: { type: 'string', description: 'Optional extra context shown under the question.' },
-    options: {
-      type: 'array',
-      minItems: 2,
-      maxItems: 3,
-      description: 'The answer options (2 or 3). Give each a stable `value`; correctAnswer references it.',
-      items: {
-        type: 'object',
-        properties: {
-          label: { type: 'string', description: 'Display label: a bare claim, no justification.' },
-          value: { type: 'string', description: 'Stable value correctAnswer refers to. Defaults to the label.' },
-          description: { type: 'string', description: 'Optional extra detail shown below the option.' },
-        },
-        required: ['label'],
+export const QUIZ_DESCRIPTION = quizDescription('quiz')
+export const PROBE_DESCRIPTION = quizDescription('probe')
+
+const QUIZ_FIELDS = {
+  question: { type: 'string', description: 'The single question to ask. Exactly one question per call.' },
+  details: { type: 'string', description: 'Optional extra context shown under the question.' },
+  options: {
+    type: 'array',
+    minItems: 2,
+    maxItems: 3,
+    description: 'The answer options (2 or 3). Give each a stable `value`; correctAnswer references it.',
+    items: {
+      type: 'object',
+      properties: {
+        label: { type: 'string', description: 'Display label: a bare claim, no justification.' },
+        value: { type: 'string', description: 'Stable value correctAnswer refers to. Defaults to the label.' },
+        description: { type: 'string', description: 'Optional extra detail shown below the option.' },
       },
+      required: ['label'],
     },
-    multiSelect: { type: 'boolean', description: 'True when more than one option is correct and he must select all of them.' },
-    explanation: {
-      type: 'string',
-      description: 'REQUIRED. Why the correct answer is correct, revealed after he answers. Written BEFORE correctAnswer by design: reason it out, then commit.',
-    },
-    correctAnswer: {
-      anyOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }],
-      description: 'REQUIRED. The correct option value (single-select) or values (multi-select, exact set).',
-    },
-    shuffle: { type: 'boolean', description: 'Defaults to true. False only when option order is meaningful.' },
   },
+  multiSelect: { type: 'boolean', description: 'True when more than one option is correct and he must select all of them.' },
+  explanation: {
+    type: 'string',
+    description: 'REQUIRED. Why the correct answer is correct, revealed after he answers. Written BEFORE correctAnswer by design: reason it out, then commit.',
+  },
+  correctAnswer: {
+    anyOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }],
+    description: 'REQUIRED. The correct option value (single-select) or values (multi-select, exact set).',
+  },
+  shuffle: { type: 'boolean', description: 'Defaults to true. False only when option order is meaningful.' },
+}
+
+export const PROBE_SCHEMA = {
+  type: 'object',
+  properties: QUIZ_FIELDS,
   required: ['question', 'options', 'explanation', 'correctAnswer'],
 }
 
-export const EXPLAIN_DESCRIPTION = `Ask the learner to EXPLAIN something in his own words: a graded check with NO options; he types a free-text answer (or chooses to answer in chat, or says "I don't know"). Unlike AskUserQuestion (no right answer), explain always has one.
+export const QUIZ_SCHEMA = {
+  type: 'object',
+  properties: { ...ROLE_FIELDS, ...QUIZ_FIELDS },
+  required: ['type', 'nodeId', 'question', 'options', 'explanation', 'correctAnswer'],
+}
+
+function explainDescription(name: 'explain' | 'recall'): string {
+  const phase =
+    name === 'explain'
+      ? 'For the teaching phase, once the session has a plan: every call carries type and nodeId. Before the plan exists, use recall instead.'
+      : 'For questions before the session has a plan: probing his understanding, or a graded question outside any lesson. No type or nodeId. Once a plan exists, use explain instead.'
+  return `Ask the learner to EXPLAIN something in his own words: a graded check with NO options; he types a free-text answer (or chooses to answer in chat, or says "I don't know"). Unlike AskUserQuestion (no right answer), ${name} always has one.
 
 THE COMMITMENT RULE: correctAnswer is the FULL correct answer in your own words, reasoning included, COMMITTED before he ever sees the question. When his answer returns, grade it strictly against the commitment; never revise it after seeing his words. He sees the committed answer once he has answered.
 
-Once the session has a plan, every call carries type and nodeId; before that, omit them. ONE question per turn: call a single explain, then end your turn.`
+${phase} ONE question per turn: call a single ${name}, then end your turn.`
+}
+
+export const EXPLAIN_DESCRIPTION = explainDescription('explain')
+export const RECALL_DESCRIPTION = explainDescription('recall')
+
+const EXPLAIN_FIELDS = {
+  question: { type: 'string', description: 'What he should explain. Markdown and LaTeX render.' },
+  details: { type: 'string', description: 'Optional extra context shown under the question.' },
+  correctAnswer: { type: 'string', description: 'REQUIRED. The full committed answer, reasoning included, written before he sees the question.' },
+}
+
+export const RECALL_SCHEMA = {
+  type: 'object',
+  properties: EXPLAIN_FIELDS,
+  required: ['question', 'correctAnswer'],
+}
 
 export const EXPLAIN_SCHEMA = {
   type: 'object',
-  properties: {
-    ...ROLE_FIELDS,
-    question: { type: 'string', description: 'What he should explain. Markdown and LaTeX render.' },
-    details: { type: 'string', description: 'Optional extra context shown under the question.' },
-    correctAnswer: { type: 'string', description: 'REQUIRED. The full committed answer, reasoning included, written before he sees the question.' },
-  },
-  required: ['question', 'correctAnswer'],
+  properties: { ...ROLE_FIELDS, ...EXPLAIN_FIELDS },
+  required: ['type', 'nodeId', 'question', 'correctAnswer'],
+}
+
+// The quiz-type setting: which graded-question tools are offered. "both" keeps
+// the model's choice; "choice" or "free" arms one mechanic, as LearnHarness's
+// setting does.
+export type QuizType = 'both' | 'choice' | 'free'
+
+export function parseQuizType(value: unknown): QuizType {
+  const v = String(value ?? '').trim().toLowerCase()
+  return v === 'choice' || v === 'free' ? v : 'both'
+}
+
+export function offersTool(quizType: QuizType, tool: string): boolean {
+  if (quizType === 'choice') return !FREE_RECALL_TOOLS.has(tool)
+  if (quizType === 'free') return !MULTIPLE_CHOICE_TOOLS.has(tool)
+  return true
 }
 
 export const PROBE_DONE_DESCRIPTION = `Conclude the probing phase and hand off to planning. Call this ONCE, when the probe is complete: every strand the lesson depends on is bracketed (a floor he reliably gets right AND a ceiling where it runs out), and his learning goal is concrete. The input IS the learner assessment: one strand per dependency the lesson will rest on, with your read of where his edge sits on it (floor, ceiling, misconceptions, what to build from), written from the evidence. It is shown to him and logged. Refused after the probe is already concluded. After it succeeds, plan in the same turn.`
@@ -131,7 +201,7 @@ export const PLAN_DESCRIPTION = `Write or REWRITE this session's plan map: the d
 
 A mermaid graph block: one node per line (\`slug[Short Title]\`; slugs are permanent lowercase ids: a-z, 0-9, hyphens/underscores), \`-->\` edges meaning "from must be understood before to" (chains fine). No subgraphs, styles or classes. A map, not a syllabus: nodes are structural landmarks (the unconditional truths at the bottom, the major stations, his goal at the sink), as many as the subject genuinely needs.
 
-Every quiz and explain call from then on names the node it is about via nodeId; where the lesson stands derives from those tags. Nodes are never marked finished.`
+Every quiz and explain call from then on (probe and recall are for before the plan) names the node it is about via nodeId; where the lesson stands derives from those tags. Nodes are never marked finished.`
 
 export const PLAN_SCHEMA = {
   type: 'object',

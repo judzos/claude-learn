@@ -20,8 +20,8 @@ It is a port of [LearnHarness](https://github.com/amosblomqvist/learnharness) by
 
 **Tools Claude uses**
 
-- `quiz`: graded multiple choice. You see ✓/✗, the correct answer and the explanation as soon as you answer. "I don't know" is always offered, and options are shuffled. After a graded pick, a second short popup asks how sure you are, before the answer is revealed. You can type a percentage and your thinking there instead of picking a level.
-- `explain`: free recall. You answer in your own words, and Claude grades you against an answer it committed to before asking.
+- `probe` and `quiz`: graded multiple choice, `probe` before the lesson has a plan and `quiz` after it (tagged with a plan node and a predict/check role). You see ✓/✗, the correct answer and the explanation as soon as you answer. "I don't know" is always offered, and options are shuffled. After a graded pick, a second short popup asks how sure you are, before the answer is revealed. You can type a percentage and your thinking there instead of picking a level.
+- `recall` and `explain`: free recall, split the same way. The plugin's `quizType` setting picks which kinds Claude can ask: `both` (the default), `choice` or `free`. You answer in your own words, and Claude grades you against an answer it committed to before asking.
 - `probe_done`, `plan`, `problem`, `conclude`: the probe hand-off, the plan map and the practice problems.
 - `graph_sessions`, `graph_propositions`, `graph_find`, `graph_extract`: reading the knowledge graph and adding to it.
 
@@ -69,7 +69,7 @@ Diagrams need `rsvg-convert` (or ImageMagick) for SVG, and Node for Mermaid (`np
 ## Differences from LearnHarness
 
 - Questions use Claude Code's own question popup. That popup holds at most 4 choices, so a quiz has 2 or 3 options plus "I don't know". Confidence is asked in a second popup rather than with a slider, and thinking is typed there or in chat.
-- The probe and teaching phases run in one agent, so the same `quiz` tool serves both. Once a plan exists, it requires `type` and `nodeId`.
+- The probe and teaching phases run in one agent. As in LearnHarness, they ask through different tools (`probe`/`recall`, then `quiz`/`explain`), and each refuses the wrong phase.
 - Background jobs are Claude Code subagents. PDFs are read with Claude's own Read tool.
 - Not ported: API keys and the cost meter, dictation (your OS dictation works in any text field), and the in-app updater.
 

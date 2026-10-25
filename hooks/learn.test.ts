@@ -50,7 +50,7 @@ test('the quiz tool asks through AskUserQuestion and grades the pick', async ($,
     return { result: { questions: (e as any).questions, answers: { [QUESTION]: 'Venus' } } } as any
   })
   const ran = await $.tool.call({
-    tool: 'mcp__learn__quiz',
+    tool: 'mcp__learn__probe',
     question: QUESTION,
     options: OPTIONS,
     correctAnswer: 'mercury',
@@ -73,7 +73,7 @@ test("I don't know reaches the model as a knowledge gap, worded as pi's", async 
     return { result: { questions: (e as any).questions, answers: { [QUESTION]: "I don't know" } } } as any
   })
   const ran = await $.tool.call({
-    tool: 'mcp__learn__quiz',
+    tool: 'mcp__learn__probe',
     question: QUESTION,
     options: OPTIONS,
     correctAnswer: 'mercury',
@@ -92,7 +92,7 @@ test('a malformed quiz is refused, not asked', async ($, on) => {
     wasAsked = true
     return { result: {} } as any
   })
-  const ran = await $.tool.call({ tool: 'mcp__learn__quiz', question: 'Q?', options: OPTIONS, correctAnswer: 'pluto', explanation: 'x' } as any)
+  const ran = await $.tool.call({ tool: 'mcp__learn__probe', question: 'Q?', options: OPTIONS, correctAnswer: 'pluto', explanation: 'x' } as any)
   expect(ran.deny).toMatch(/does not match/)
   expect(wasAsked).toBe(false)
 })
@@ -121,7 +121,7 @@ test('/md-log links a note, then mirrors prompts, replies and quizzes into it', 
 
   await $.session.append({ door: 'prompt', origin: { kind: 'composer' }, uuid: 'u1', message: { type: 'user', role: 'user', content: [{ type: 'text', text: 'teach me orbits' }] } } as any)
   await $.session.append({ door: 'response', origin: { kind: 'model', model: 'm' }, uuid: 'a1', message: { type: 'assistant', role: 'assistant', content: [{ type: 'text', text: 'Start from gravity.' }] } } as any)
-  await $.tool.call({ tool: 'mcp__learn__quiz', question: QUESTION, options: OPTIONS, correctAnswer: 'mercury', explanation: 'Innermost.', shuffle: false } as any)
+  await $.tool.call({ tool: 'mcp__learn__probe', question: QUESTION, options: OPTIONS, correctAnswer: 'mercury', explanation: 'Innermost.', shuffle: false } as any)
 
   const log = files['/vault/lesson.md']!
   expect(log).toContain('> [!quote] YOU\n\nteach me orbits')

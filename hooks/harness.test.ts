@@ -1,9 +1,9 @@
 import { expect, mock, test } from 'claude-code/testing'
 
-import { parseConfidence, quizResultText } from './format'
+import { healArguments, parseConfidence, quizResultText } from './format'
 import { applyFindings, mergeGraph, noteNames, propositionNote, teachingTexts, validateFindings, type NodeLine } from './graph'
 import { parsePlan, planStatuses, planSummary, type PlanTree } from './plan'
-import { isPluginScript } from './tools'
+import { isPluginScript, offersTool, parseQuizType, QUIZ_SCHEMA } from './tools'
 
 const PLAN = `graph TD
   limits[Limits] --> derivative[The derivative]
@@ -97,6 +97,32 @@ test('once a plan exists, quizzes must name their node and role', async ($, on) 
   expect(shown.text).toContain('● The chain rule')
 })
 
+test('probe and recall serve the probe; quiz and explain serve the plan', async ($, on) => {
+  world(on, { 'What is': '$2\\cos(2x)$', 'How sure': 'Likely (75%)', Why: 'Rates compose.' })
+  const early = await $.tool.call({ tool: 'mcp__learn__quiz', type: 'check', nodeId: 'limits', ...QUIZ } as any)
+  expect(early.deny).toMatch(/no plan exists yet. While probing \(or outside a lesson\) use probe/)
+  const earlyExplain = await $.tool.call({ tool: 'mcp__learn__explain', type: 'check', nodeId: 'limits', question: 'Why?', correctAnswer: 'x' } as any)
+  expect(earlyExplain.deny).toMatch(/use recall/)
+  const probed = await $.tool.call({ tool: 'mcp__learn__probe', ...QUIZ } as any)
+  expect(String(probed.result)).toContain('User answered correctly.')
+
+  await $.tool.call({ tool: 'mcp__learn__plan', mermaid: PLAN } as any)
+  const late = await $.tool.call({ tool: 'mcp__learn__probe', ...QUIZ } as any)
+  expect(late.deny).toMatch(/this session has a plan, so graded questions go through quiz, with `type`/)
+  expect(late.deny).toMatch(/limits, derivative, chain-rule, products/)
+  const lateRecall = await $.tool.call({ tool: 'mcp__learn__recall', question: 'Why?', correctAnswer: 'x' } as any)
+  expect(lateRecall.deny).toMatch(/go through explain/)
+})
+
+test('the quiz-type setting arms one mechanic or both', async () => {
+  expect(parseQuizType(undefined)).toBe('both')
+  expect(parseQuizType(' Free ')).toBe('free')
+  expect(parseQuizType('nonsense')).toBe('both')
+  expect(['probe', 'recall', 'quiz', 'explain'].filter(t => offersTool('choice', `mcp__learn__${t}`))).toEqual(['probe', 'quiz'])
+  expect(['probe', 'recall', 'quiz', 'explain'].filter(t => offersTool('free', `mcp__learn__${t}`))).toEqual(['recall', 'explain'])
+  expect(['probe', 'recall', 'quiz', 'explain'].filter(t => offersTool('both', `mcp__learn__${t}`))).toEqual(['probe', 'recall', 'quiz', 'explain'])
+})
+
 // --- the quiz: confidence and thinking ---
 
 test('confidence comes from a level or a typed percentage with thinking', async () => {
@@ -110,14 +136,14 @@ test('confidence comes from a level or a typed percentage with thinking', async 
 
 test('a graded pick is followed by the confidence question; "I don\'t know" is not', async ($, on) => {
   const { asked } = world(on, { 'What is': "I don't know" })
-  const ran = await $.tool.call({ tool: 'mcp__learn__quiz', ...QUIZ } as any)
+  const ran = await $.tool.call({ tool: 'mcp__learn__probe', ...QUIZ } as any)
   expect(String(ran.result)).toContain('genuine knowledge gap')
   expect(asked.length).toBe(1)
 })
 
 test('typed thinking on the confidence question reaches the model', async ($, on) => {
   world(on, { 'What is': '$\\cos(2x)$', 'How sure': '80 inner derivative is 1?' })
-  const ran = await $.tool.call({ tool: 'mcp__learn__quiz', ...QUIZ } as any)
+  const ran = await $.tool.call({ tool: 'mcp__learn__probe', ...QUIZ } as any)
   expect(String(ran.result)).toContain('User answered incorrectly.')
   expect(String(ran.result)).toContain('Confidence: 80%')
   expect(String(ran.result)).toContain('His thinking: inner derivative is 1?')
@@ -127,10 +153,10 @@ test('typed thinking on the confidence question reaches the model', async ($, on
 
 test('explain grades free text against the committed answer', async ($, on) => {
   world(on, { 'Why does': 'because the inner function scales the rate' })
-  const ran = await $.tool.call({ tool: 'mcp__learn__explain', question: 'Why does the chain rule multiply?', correctAnswer: 'Rates compose: dy/dx = dy/du · du/dx.' } as any)
+  const ran = await $.tool.call({ tool: 'mcp__learn__recall', question: 'Why does the chain rule multiply?', correctAnswer: 'Rates compose: dy/dx = dy/du · du/dx.' } as any)
   expect(String(ran.result)).toContain('because the inner function scales the rate')
   expect(String(ran.result)).toContain('Committed answer (he sees it now): Rates compose')
-  const empty = await $.tool.call({ tool: 'mcp__learn__explain', question: 'Why?', correctAnswer: ' ' } as any)
+  const empty = await $.tool.call({ tool: 'mcp__learn__recall', question: 'Why?', correctAnswer: ' ' } as any)
   expect(empty.deny).toMatch(/commit to the full correct answer/)
 })
 
@@ -141,6 +167,28 @@ test('probe_done records the assessment once', async ($, on) => {
   expect(String(first.result)).toContain('Plan now')
   const second = await $.tool.call(input as any)
   expect(second.deny).toMatch(/already concluded/)
+})
+
+// --- the argument heal ---
+
+test('JSON-encoded arguments and quoted enum values are healed; free text is not', async () => {
+  const raw = { type: '"check"', options: JSON.stringify(QUIZ.options), question: '["not", "parsed"]', shuffle: 'false' }
+  const healed = healArguments(raw, QUIZ_SCHEMA)
+  expect(healed.type).toBe('check')
+  expect(healed.options).toEqual(QUIZ.options)
+  expect(healed.question).toBe('["not", "parsed"]')
+  expect(healed.shuffle).toBe(false)
+  const fine = { type: 'predict' }
+  expect(healArguments(fine, QUIZ_SCHEMA)).toBe(fine)
+  expect(healArguments({ type: 'guess' }, QUIZ_SCHEMA).type).toBe('guess')
+})
+
+test('a quiz with stringified options and a quoted type is served, not refused', async ($, on) => {
+  world(on, { 'What is': '$2\\cos(2x)$', 'How sure': 'Likely (75%)' })
+  await $.tool.call({ tool: 'mcp__learn__plan', mermaid: PLAN } as any)
+  const call = { tool: 'mcp__learn__quiz', ...QUIZ, type: '"check"', nodeId: 'chain-rule', options: JSON.stringify(QUIZ.options) }
+  const ok = await $.tool.call(call as any)
+  expect(String(ok.result)).toContain('User answered correctly.')
 })
 
 // --- practice ---
@@ -155,7 +203,7 @@ test('one problem at a time; conclude reveals the committed solution', async ($,
   expect(again.deny).toMatch(/already active/)
   const unknown = await $.tool.call({ tool: 'mcp__learn__problem', statement: 'x', mode: 'recall', modelSolution: 'y', target: ['n_missing'] } as any)
   expect(unknown.deny).toMatch(/already active/)
-  const done = await $.tool.call({ tool: 'mcp__learn__conclude', outcome: 'solvedWithHints', verdict: 'Right after an R1 nudge.', rung: 'R1', missClass: 'cue', retest: true } as any)
+  const done = await $.tool.call({ tool: 'mcp__learn__conclude', outcome: '"solvedWithHints"', verdict: 'Right after an R1 nudge.', rung: 'R1', missClass: 'cue', retest: 'true' } as any)
   expect(String(done.result)).toContain('he now sees the committed model solution')
   expect(String(done.result)).toContain('retest')
   const target = await $.tool.call({ tool: 'mcp__learn__problem', statement: 'x', mode: 'recall', modelSolution: 'y', target: ['n_missing'] } as any)
@@ -299,7 +347,7 @@ test('session start registers the tools, commands and agents, with the plugin pa
   on('session.messages', () => ({ value: [] }) as any)
   on('session.start', ($: any, e: any) => e)
   await $.session.start({ cwd: '/home/u/elsewhere', surface: null, isInteractive: false } as any)
-  expect(tools).toContain('quiz')
+  expect(tools).toEqual(expect.arrayContaining(['probe', 'recall', 'quiz', 'explain']))
   expect(tools).toContain('graph_extract')
   expect(commands).toEqual(['learn', 'md-log', 'md-unlog', 'map', 'graph', 'graph-import'])
   expect(agents.length).toBe(1)

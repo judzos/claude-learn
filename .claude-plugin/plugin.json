@@ -1,6 +1,6 @@
 {
   "name": "learn",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Teach anything so it locks in: probe, plan and teach one reasoning step at a time, graded quizzes with confidence, practice sessions, and a knowledge graph in your Obsidian vault. Ported from LearnHarness.",
   "author": {
     "name": "judzos"
@@ -20,6 +20,12 @@
       "title": "Graph extraction model",
       "description": "The model that extracts propositions into the knowledge graph: an alias (haiku, sonnet, opus) or a full model id.",
       "default": "sonnet"
+    },
+    "quizType": {
+      "type": "string",
+      "title": "Quiz type",
+      "description": "Which graded questions Claude can ask: both (Claude picks per question), choice (multiple choice only), or free (free recall only: you answer in your own words).",
+      "default": "both"
     },
     "askConfidence": {
       "type": "boolean",

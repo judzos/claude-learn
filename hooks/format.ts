@@ -405,3 +405,51 @@ export function skillNote(text: string): string | undefined {
   const m = /^Base directory for this skill: .*\/skills\/([^/\s]+)/.exec(text.trim())
   return m ? `> [!note] SKILL loaded: ${m[1]}` : undefined
 }
+
+// --- argument heal ---
+
+// Models sometimes send a field JSON-encoded (`"options": "[...]"`) or copy an
+// enum value with its quotes (`"type": "\"predict\""`). Where the schema says
+// what the field must be, a string that parses to exactly that is replaced;
+// everything else passes untouched for the tool to refuse honestly. Ported
+// from LearnHarness (src/core/argument-heal.ts, src/core/value-debris.ts), AGPL-3.0.
+interface PropSchema {
+  type?: string | string[]
+  enum?: unknown[]
+}
+
+const stripDebris = (value: string) => value.replace(/^[\s:"'`]+/, '').replace(/[\s:"'`]+$/, '')
+
+function tryParse(raw: string): unknown {
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return undefined
+  }
+}
+
+export function healArguments<T>(args: T, schema: { properties?: Record<string, PropSchema> }): T {
+  if (!args || typeof args !== 'object' || Array.isArray(args) || !schema.properties) return args
+  let healed: Record<string, unknown> | null = null
+  for (const [key, prop] of Object.entries(schema.properties)) {
+    const raw = (args as Record<string, unknown>)[key]
+    if (typeof raw !== 'string') continue
+    const types = Array.isArray(prop.type) ? prop.type : prop.type ? [prop.type] : []
+    if (types.includes('string') && !prop.enum) continue // free text: never touched
+    const parsed = tryParse(raw.trim())
+    let fixed: unknown
+    if (prop.enum) {
+      if (prop.enum.includes(raw)) continue
+      if (prop.enum.includes(parsed)) fixed = parsed
+      else if (prop.enum.includes(stripDebris(raw))) fixed = stripDebris(raw)
+    } else if (types.includes('array') && Array.isArray(parsed)) fixed = parsed
+    else if (types.includes('object') && parsed && typeof parsed === 'object' && !Array.isArray(parsed)) fixed = parsed
+    else if (types.includes('boolean') && typeof parsed === 'boolean') fixed = parsed
+    else if ((types.includes('number') || types.includes('integer')) && typeof parsed === 'number') fixed = parsed
+    if (fixed !== undefined) {
+      healed ??= { ...(args as Record<string, unknown>) }
+      healed[key] = fixed
+    }
+  }
+  return (healed ?? args) as T
+}

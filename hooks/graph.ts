@@ -418,7 +418,8 @@ interface Row {
   toolUses: Array<{ tool: string; input: Record<string, unknown> }>
 }
 
-const QUIZ_TOOLS = new Set(['mcp__learn__quiz', 'mcp__learn__explain'])
+const QUIZ_TOOLS = new Set(['mcp__learn__quiz', 'mcp__learn__explain', 'mcp__learn__probe', 'mcp__learn__recall'])
+const FREE_RECALL = new Set(['mcp__learn__explain', 'mcp__learn__recall'])
 
 // Assistant prose, plus the reasoning committed in quiz explanations and
 // explain answers (teaching too). Practice sessions add nothing: practice
@@ -431,11 +432,11 @@ export function teachingTexts(rows: readonly Row[]): string[] {
     for (const use of row.toolUses ?? []) {
       if (!QUIZ_TOOLS.has(use.tool)) continue
       const i = use.input as { question?: string; explanation?: string; correctAnswer?: unknown; options?: Array<{ label?: string; value?: string }> }
-      const reasoning = use.tool === 'mcp__learn__explain' ? String(i.correctAnswer ?? '') : String(i.explanation ?? '')
+      const reasoning = FREE_RECALL.has(use.tool) ? String(i.correctAnswer ?? '') : String(i.explanation ?? '')
       if (!i.question || !reasoning.trim()) continue
       const values = Array.isArray(i.correctAnswer) ? i.correctAnswer.map(String) : [String(i.correctAnswer ?? '')]
       const answer =
-        use.tool === 'mcp__learn__explain'
+        FREE_RECALL.has(use.tool)
           ? ''
           : (i.options ?? []).filter(o => values.includes(String(o.value ?? o.label ?? ''))).map(o => o.label).join('; ')
       out.push([`Question: ${i.question}`, answer ? `Answer: ${answer}` : '', `Why: ${reasoning}`].filter(Boolean).join('\n'))
