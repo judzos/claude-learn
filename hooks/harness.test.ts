@@ -108,10 +108,50 @@ test('confidence comes from a level or a typed percentage with thinking', async 
   expect(text).not.toContain('Confidence') // no confidence on "I don't know"
 })
 
-test('a graded pick is followed by the confidence question; "I don\'t know" is not', async ($, on) => {
-  const { asked } = world(on, { 'What is': "I don't know" })
+test('a graded pick is followed by the confidence question, then the thinking question', async ($, on) => {
+  const { asked } = world(on, { 'What is': '$2\\cos(2x)$', 'How sure': 'Likely (75%)', 'What were you thinking': 'Nothing to add' })
   const ran = await $.tool.call({ tool: 'mcp__learn__quiz', ...QUIZ } as any)
+  expect(asked.map(q => q.slice(0, 12))).toEqual(['What is $\\fr', 'How sure are', 'What were yo'])
+  expect(String(ran.result)).toContain('Confidence: 75%')
+  expect(String(ran.result)).not.toContain('His thinking') // "Nothing to add" adds nothing
+})
+
+test('"I don\'t know" skips confidence but still takes his thinking', async ($, on) => {
+  const { asked } = world(on, { 'What is': "I don't know", 'What were you thinking': 'no idea how sin(2x) differs from sin(x)' })
+  const ran = await $.tool.call({ tool: 'mcp__learn__quiz', ...QUIZ } as any)
+  expect(asked.length).toBe(2)
+  expect(asked[1]).toStartWith('What were you thinking')
   expect(String(ran.result)).toContain('genuine knowledge gap')
+  expect(String(ran.result)).toContain('His thinking: no idea how sin(2x) differs from sin(x)')
+})
+
+test('a typed answer and "I was guessing" both reach the model', async ($, on) => {
+  const { asked } = world(on, { 'What is': 'cos(2x) times 2?', 'What were you thinking': 'I was guessing' })
+  const ran = await $.tool.call({ tool: 'mcp__learn__quiz', ...QUIZ } as any)
+  expect(asked.length).toBe(2)
+  expect(String(ran.result)).toContain('Typed: cos(2x) times 2?')
+  expect(String(ran.result)).toContain('His thinking: I was guessing.')
+})
+
+test('thinking typed on both questions is kept, the confidence note first', async ($, on) => {
+  world(on, { 'What is': '$\\cos(2x)$', 'How sure': '60 sign?', 'What were you thinking': 'forgot the inner derivative' })
+  const ran = await $.tool.call({ tool: 'mcp__learn__quiz', ...QUIZ } as any)
+  expect(String(ran.result)).toContain('Confidence: 60%')
+  expect(String(ran.result)).toContain('His thinking: sign?\n\nforgot the inner derivative')
+})
+
+test('with confidence turned off, the thinking question still comes', { options: { askConfidence: false } }, async ($, on) => {
+  const { asked } = world(on, { 'What is': '$2\\cos(2x)$', 'What were you thinking': 'outer times inner' })
+  const ran = await $.tool.call({ tool: 'mcp__learn__quiz', ...QUIZ } as any)
+  expect(asked.length).toBe(2)
+  expect(String(ran.result)).not.toContain('Confidence')
+  expect(String(ran.result)).toContain('His thinking: outer times inner')
+})
+
+test('a dismissed quiz asks nothing more', async ($, on) => {
+  const { asked } = world(on, {})
+  const ran = await $.tool.call({ tool: 'mcp__learn__quiz', ...QUIZ } as any)
+  expect(String(ran.result)).toBe('User cancelled the quiz')
   expect(asked.length).toBe(1)
 })
 

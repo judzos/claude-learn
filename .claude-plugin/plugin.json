@@ -1,6 +1,6 @@
 {
   "name": "learn",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Teach anything so it locks in: probe, plan and teach one reasoning step at a time, graded quizzes with confidence, practice sessions, and a knowledge graph in your Obsidian vault. Ported from LearnHarness.",
   "author": {
     "name": "judzos"

@@ -138,7 +138,7 @@ export interface AnswerExtras {
 }
 
 // Asked right after his pick, before he sees the verdict.
-export const CONFIDENCE_QUESTION = 'How sure are you of that answer? Or type a percentage and/or your thinking under Other.'
+export const CONFIDENCE_QUESTION = 'How sure are you of that answer? Or type a percentage under Other.'
 export const CONFIDENCE_OPTIONS = [
   { label: 'Certain (95%)', percent: 95 },
   { label: 'Likely (75%)', percent: 75 },
@@ -160,6 +160,19 @@ export function parseConfidence(answer: string | undefined): AnswerExtras {
     return thinking ? { confidence, thinking } : { confidence }
   }
   return { thinking: text }
+}
+
+// Asked after every answer, before the verdict, whatever he picked: his
+// thinking typed under Other, or one of two quick answers.
+export const THINKING_QUESTION = 'What were you thinking? Type it under Other — half-formed is fine.'
+export const THINKING_NONE = 'Nothing to add'
+export const THINKING_GUESSED = 'I was guessing'
+
+export function parseThinking(answer: string | undefined): string | undefined {
+  const text = answer?.trim()
+  if (!text || text === THINKING_NONE) return undefined
+  if (text === THINKING_GUESSED) return 'I was guessing.'
+  return text
 }
 
 export function mergeThinking(...parts: Array<string | undefined>): string | undefined {
