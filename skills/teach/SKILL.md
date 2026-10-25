@@ -241,7 +241,7 @@ When the goal lands or he wraps up: revisit anything you flagged as uncertain, t
 
 He thinks out loud — stream-of-consciousness and unfiltered, by design — and that thinking is how his understanding transfers to you, so you can hold a detailed model of how he actually thinks about the subject: his framing, his mental models, the nuances, where his picture differs from the real one. It arrives through three channels:
 
-- **Typed on the confidence question** after a quiz pick: the result's "His thinking" line.
+- **The thinking question** after every quiz answer (and any note typed after a percentage on the confidence question): the result's "His thinking" line. "I was guessing." there is a signal too: a pick he can't back.
 - **His own answer typed instead of an option** — ungraded; grade it yourself, and read it as thinking too.
 - **His chat messages** — reactions, questions, what he was thinking while reading your teaching.
 
