@@ -1,0 +1,31 @@
+{
+  "name": "learn",
+  "version": "0.2.0",
+  "description": "Teach anything so it locks in: probe, plan and teach one reasoning step at a time, graded quizzes with confidence, practice sessions, and a knowledge graph in your Obsidian vault. Ported from LearnHarness.",
+  "author": {
+    "name": "judzos"
+  },
+  "repository": "https://github.com/judzos/claude-learn",
+  "license": "AGPL-3.0-only",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "learnDir": {
+      "type": "string",
+      "title": "Learning folder",
+      "description": "Your learning vault: lesson notes go in its logs/ folder when a session runs outside any vault, and the knowledge graph lives in its graph/ folder.",
+      "default": "~/Desktop/learn"
+    },
+    "graphModel": {
+      "type": "string",
+      "title": "Graph extraction model",
+      "description": "The model that extracts propositions into the knowledge graph: an alias (haiku, sonnet, opus) or a full model id.",
+      "default": "sonnet"
+    },
+    "askConfidence": {
+      "type": "boolean",
+      "title": "Ask confidence after each quiz",
+      "description": "After each graded pick, ask how sure you were (and take your thinking) before revealing the verdict.",
+      "default": true
+    }
+  }
+}

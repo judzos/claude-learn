@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# render-viz — render a Mermaid (.mmd) or SVG (.svg) source to PNG for the
+# visual makers' render-and-inspect loop.
+#
+#   render-viz <source.mmd|source.svg>              preview: writes <source>.png, prints its path
+#   render-viz <source.mmd|source.svg> <slug>       publish: copies the render into ./viz with a
+#                                                   unique name and prints filename + path
+#
+# Mermaid uses the mermaid-cli bundled with the pi learn setup (falls back to npx);
+# SVG uses rsvg-convert, falling back to ImageMagick.
+set -euo pipefail
+
+src=${1:?usage: render-viz <source.mmd|source.svg> [save-as-slug]}
+slug=${2:-}
+[ -f "$src" ] || { echo "render-viz: no such file: $src" >&2; exit 1; }
+out="${src%.*}.png"
+
+# macOS ships BSD tools: no `timeout`, no `mktemp --suffix`, no `date +%3N`.
+# Fall back to gtimeout, then perl's alarm (exec keeps the pending alarm).
+run_limited() {
+  local secs=$1; shift
+  if command -v timeout >/dev/null; then timeout "$secs" "$@"
+  elif command -v gtimeout >/dev/null; then gtimeout "$secs" "$@"
+  else perl -e 'alarm shift; exec @ARGV or die "exec: $!\n"' "$secs" "$@"
+  fi
+}
+
+case "$src" in
+  *.mmd)
+    mmdc="$HOME/Desktop/learn/.pi/extensions/visual-tools/node_modules/.bin/mmdc"
+    tmpdir=$(mktemp -d "${TMPDIR:-/tmp}/render-viz.XXXXXX")
+    trap 'rm -rf "$tmpdir"' EXIT
+    cfg="$tmpdir/puppeteer.json"
+    # npx's puppeteer often lacks its pinned Chrome; on macOS use the installed one.
+    mac_chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    if [ -z "${PUPPETEER_EXECUTABLE_PATH:-}" ] && [ -x "$mac_chrome" ]; then
+      export PUPPETEER_EXECUTABLE_PATH="$mac_chrome"
+    fi
+    echo '{"args":["--no-sandbox"]}' > "$cfg"
+    if [ -x "$mmdc" ]; then
+      run_limited 90 "$mmdc" -q -i "$src" -o "$out" -p "$cfg" -s 2 -b white
+    else
+      run_limited 180 npx -y @mermaid-js/mermaid-cli@11.4.2 -q -i "$src" -o "$out" -p "$cfg" -s 2 -b white
+    fi
+    ;;
+  *.svg)
+    if ! rsvg-convert -z 2 -b white "$src" -o "$out" 2>/dev/null; then
+      magick -density 192 -background white "$src" "$out"
+    fi
+    ;;
+  *) echo "render-viz: source must end in .mmd or .svg" >&2; exit 1 ;;
+esac
+
+if [ -z "$slug" ]; then
+  echo "preview: $out"
+  exit 0
+fi
+
+clean=$(printf '%s' "$slug" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g')
+ms=$(date +%s%3N)
+case "$ms" in *N) ms=$(perl -MTime::HiRes=time -e 'printf "%d", time * 1000') ;; esac
+filename="viz-${clean:-viz}-$ms.png"
+mkdir -p viz
+cp "$out" "viz/$filename"
+echo "filename: $filename"
+echo "path: $(pwd)/viz/$filename"

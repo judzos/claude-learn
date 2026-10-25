@@ -1,0 +1,13 @@
+{
+  "name": "claude-learn",
+  "owner": {
+    "name": "judzos"
+  },
+  "description": "learn: a Claude Code learning harness ported from LearnHarness",
+  "plugins": [
+    {
+      "name": "learn",
+      "source": "./"
+    }
+  ]
+}

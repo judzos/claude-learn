@@ -1,0 +1,137 @@
+#!/usr/bin/env node
+// test-demo — load an interactive demo (one self-contained HTML file) in headless
+// Chrome, report what broke, and screenshot it for the demo maker to look at.
+//
+//   test-demo <demo.html> [probe-js]     test: prints PASSED or FAILED with every
+//                                        uncaught error, console.error and failed
+//                                        resource, plus the probe's value, and
+//                                        writes <demo>.png
+//   test-demo --publish <demo.html> <slug>
+//                                        copies the demo into ./viz with a unique
+//                                        name and prints filename, path and url
+//
+// Chrome is found on PATH (chromium, google-chrome…), in puppeteer's cache, or
+// at PUPPETEER_EXECUTABLE_PATH; macOS's installed Chrome works too.
+'use strict'
+const { execFileSync, spawnSync } = require('child_process')
+const fs = require('fs')
+const os = require('os')
+const path = require('path')
+
+function die(msg) {
+  process.stderr.write(`test-demo: ${msg}\n`)
+  process.exit(1)
+}
+
+function findChrome() {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH
+  for (const name of ['chromium', 'chromium-browser', 'google-chrome-stable', 'google-chrome', 'chrome']) {
+    const found = spawnSync('sh', ['-c', `command -v ${name}`], { encoding: 'utf8' }).stdout.trim()
+    if (found) return found
+  }
+  const mac = ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Chromium.app/Contents/MacOS/Chromium']
+  for (const p of mac) if (fs.existsSync(p)) return p
+  const cache = path.join(os.homedir(), '.cache', 'puppeteer')
+  for (const kind of ['chrome-headless-shell', 'chrome']) {
+    const dir = path.join(cache, kind)
+    if (!fs.existsSync(dir)) continue
+    for (const version of fs.readdirSync(dir).sort().reverse()) {
+      for (const sub of fs.readdirSync(path.join(dir, version))) {
+        for (const bin of ['chrome-headless-shell', 'chrome']) {
+          const p = path.join(dir, version, sub, bin)
+          if (fs.existsSync(p)) return p
+        }
+      }
+    }
+  }
+  die('no Chrome or Chromium found; install one, or set PUPPETEER_EXECUTABLE_PATH')
+}
+
+// Records errors from the first moment, then writes a report into the DOM.
+function harness(probe) {
+  return `<script>
+(function () {
+  var errors = [];
+  window.addEventListener('error', function (e) {
+    var t = e.target;
+    if (t && t !== window && (t.src || t.href)) errors.push('failed to load ' + (t.src || t.href));
+    else errors.push('uncaught: ' + (e.message || e) + (e.lineno ? ' (line ' + e.lineno + ')' : ''));
+  }, true);
+  window.addEventListener('unhandledrejection', function (e) { errors.push('unhandled rejection: ' + (e.reason && e.reason.message || e.reason)); });
+  var ce = console.error;
+  console.error = function () { errors.push('console.error: ' + Array.prototype.join.call(arguments, ' ')); return ce.apply(console, arguments); };
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var probe = null;
+      ${probe ? `try { probe = String(eval(${JSON.stringify(probe)})); } catch (err) { probe = 'threw: ' + err; }` : ''}
+      var pre = document.createElement('pre');
+      pre.id = '__demo_report';
+      pre.style.display = 'none';
+      pre.textContent = JSON.stringify({ errors: errors, probe: probe });
+      document.body.appendChild(pre);
+    }, 2000);
+  });
+})();
+</script>`
+}
+
+function runChrome(chrome, args) {
+  const base = ['--headless', '--disable-gpu', '--hide-scrollbars', '--virtual-time-budget=5000', '--run-all-compositor-stages-before-draw']
+  let ran = spawnSync(chrome, [...base, ...args], { encoding: 'utf8', timeout: 90_000, maxBuffer: 64 * 1024 * 1024 })
+  if (ran.status !== 0 && /sandbox/i.test(ran.stderr || '')) ran = spawnSync(chrome, [...base, '--no-sandbox', ...args], { encoding: 'utf8', timeout: 90_000, maxBuffer: 64 * 1024 * 1024 })
+  return ran
+}
+
+function decode(s) {
+  return s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
+}
+
+function test(file, probe) {
+  const src = fs.readFileSync(file, 'utf8')
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'test-demo-'))
+  try {
+    const page = path.join(tmp, 'page.html')
+    const inject = harness(probe)
+    const withHarness = /<head[^>]*>/i.test(src) ? src.replace(/<head[^>]*>/i, m => m + inject) : inject + src
+    fs.writeFileSync(page, withHarness)
+    const chrome = findChrome()
+    const url = 'file://' + page
+    const dom = runChrome(chrome, ['--dump-dom', url])
+    if (dom.status !== 0 && !dom.stdout) die(`Chrome failed: ${(dom.stderr || '').trim().split('\n').slice(-3).join(' ')}`)
+    const m = /<pre id="__demo_report"[^>]*>([\s\S]*?)<\/pre>/.exec(dom.stdout || '')
+    const png = file.replace(/\.html?$/i, '') + '.png'
+    runChrome(chrome, [`--screenshot=${png}`, '--window-size=1100,900', url])
+    if (!m) {
+      console.log('FAILED')
+      console.log('- the page never finished loading (no report after 5 s of page time): an infinite loop, a blocking script, or a load that never ends')
+    } else {
+      const report = JSON.parse(decode(m[1]))
+      console.log(report.errors.length ? 'FAILED' : 'PASSED')
+      for (const e of report.errors) console.log(`- ${e}`)
+      if (probe) console.log(`probe: ${report.probe}`)
+    }
+    if (fs.existsSync(png)) console.log(`screenshot: ${png}`)
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+function publish(file, slug) {
+  const clean = String(slug || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'demo'
+  const name = `demo-${clean}-${Date.now()}.html`
+  fs.mkdirSync('viz', { recursive: true })
+  fs.copyFileSync(file, path.join('viz', name))
+  const abs = path.resolve('viz', name)
+  console.log(`filename: ${name}`)
+  console.log(`path: ${abs}`)
+  console.log(`url: file://${abs.split('/').map(encodeURIComponent).join('/')}`)
+}
+
+const args = process.argv.slice(2)
+if (args[0] === '--publish') {
+  if (!args[1] || !fs.existsSync(args[1])) die('usage: test-demo --publish <demo.html> <slug>')
+  publish(args[1], args[2])
+} else {
+  if (!args[0] || !fs.existsSync(args[0])) die('usage: test-demo <demo.html> [probe-js]')
+  test(args[0], args[1])
+}
