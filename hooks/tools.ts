@@ -28,7 +28,7 @@ const ROLE_FIELDS = {
 
 export const QUIZ_DESCRIPTION = `Ask the learner a GRADED multiple-choice question with a known correct answer, then instantly grade and give feedback. Unlike AskUserQuestion (which collects preferences/decisions with no right answer), quiz always has a correct answer supplied by you, marks his selection right/wrong (✓/✗), reveals the correct answer, and shows your explanation. Single-select or multi-select, plus an automatic "I don't know" choice so he can signal a genuine gap instead of guessing.
 
-Right after his pick, a second short dialog asks how sure he is (95 / 75 / 50 / 25%), where he can also type a percentage and his thinking. The result gives you the verdict, his confidence and his thinking.
+Right after a graded pick, a second short dialog asks how sure he is (95 / 75 / 50 / 25%, or a typed percentage). Then, after every answer ("I don't know" and typed answers included), a third asks what he was thinking: typed out, "I was guessing", or nothing to add. The result gives you the verdict, his confidence and his thinking.
 
 Mechanics:
 - correctAnswer is the option value, not a position. Single-select: one string; multi-select: an array, graded as an exact-set match. A value that matches no option is a hard error. Write explanation (why the correct option is correct) BEFORE correctAnswer: reason it out first, then commit.

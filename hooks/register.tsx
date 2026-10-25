@@ -7,6 +7,9 @@ import {
   DONT_KNOW_LABEL,
   EXPLAIN_DONT_KNOW,
   EXPLAIN_IN_CHAT,
+  THINKING_GUESSED,
+  THINKING_NONE,
+  THINKING_QUESTION,
   askAnswerCallout,
   assistantBlock,
   cleanUserText,
@@ -17,10 +20,12 @@ import {
   grade,
   interpretAnswer,
   interpretExplain,
+  mergeThinking,
   isSilentCommand,
   noteSlug,
   normalizeOptions,
   parseConfidence,
+  parseThinking,
   planCallout,
   probeCallout,
   problemCallout,
@@ -440,12 +445,18 @@ async function runQuiz($: EngineInterface, input: QuizInput & { type?: string; n
   const labels = options.map(o => (o.description ? `${o.label} — ${o.description}` : o.label))
   const answer = await ask($, details ? `${input.question}\n\n${details}` : input.question, [...labels, DONT_KNOW_LABEL], label, multiSelect)
   const picked = interpretAnswer(answer, labels, multiSelect)
-  // Then how sure he was, before he sees the verdict: a level, or a typed
-  // percentage and/or his thinking. Not after "I don't know" (no guess) or
-  // his own words (they carry his thinking already).
+  // Then, before he sees the verdict, how sure he was: a level or a typed
+  // percentage (a note after it is kept as thinking). Not after "I don't
+  // know" (no guess) or his own words.
   let extras: AnswerExtras = {}
   if (askConfidence && picked.kind === 'graded') {
     extras = parseConfidence(await ask($, CONFIDENCE_QUESTION, CONFIDENCE_OPTIONS.map(o => o.label), 'Confidence'))
+  }
+  // And his thinking, after every answer he gave: its own question, apart
+  // from confidence, so it is there whatever he picked.
+  if (picked.kind !== 'cancelled') {
+    const thinking = mergeThinking(extras.thinking, parseThinking(await ask($, THINKING_QUESTION, [THINKING_NONE, THINKING_GUESSED], 'Thinking')))
+    extras = { confidence: extras.confidence, thinking }
   }
 
   const outcome = grade(picked, correctIndices)
