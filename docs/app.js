@@ -1,6 +1,23 @@
 document.documentElement.classList.add('js');
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+const darkQuery = matchMedia('(prefers-color-scheme: dark)');
+
+// Dark mode: follows the system until the toggle sets a mode, which is remembered
+const root = document.documentElement;
+const toggle = document.querySelector('.mode-toggle');
+const isDark = () => (root.dataset.mode || (darkQuery.matches ? 'dark' : 'light')) === 'dark';
+const syncToggle = () => {
+  toggle.setAttribute('aria-pressed', String(isDark()));
+  dispatchEvent(new Event('modechange'));
+};
+toggle.addEventListener('click', () => {
+  root.dataset.mode = isDark() ? 'light' : 'dark';
+  try { localStorage.setItem('mode', root.dataset.mode); } catch {}
+  syncToggle();
+});
+darkQuery.addEventListener('change', syncToggle);
+syncToggle();
 
 // Copy keys
 document.querySelectorAll('[data-copy]').forEach((btn) => {
@@ -73,7 +90,8 @@ const canvas = document.querySelector('.field');
 if (canvas && canvas.getContext) {
   const ctx = canvas.getContext('2d');
   const css = getComputedStyle(document.documentElement);
-  const tints = ['--color-glyph-1', '--color-glyph-2', '--color-glyph-3', '--color-glyph-4', '--color-accent-deep'].map((v) => css.getPropertyValue(v).trim());
+  const readTints = () => ['--color-glyph-1', '--color-glyph-2', '--color-glyph-3', '--color-glyph-4', '--color-accent-deep'].map((v) => css.getPropertyValue(v).trim());
+  let tints = readTints();
   const ramp = ['·', ':', '?', '○', '●', '✓'];
   const font = css.getPropertyValue('--font-outlier').trim();
   const W = 8, H = 16;
@@ -131,6 +149,7 @@ if (canvas && canvas.getContext) {
   draw();
   start();
   addEventListener('resize', () => { resize(); draw(); });
+  addEventListener('modechange', () => { tints = readTints(); draw(); });
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }).observe(canvas);
   reduced.addEventListener('change', () => { reduced.matches ? (stop(), draw()) : start(); });
   const hero = canvas.parentElement;
