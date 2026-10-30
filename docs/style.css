@@ -1,12 +1,14 @@
 /* Hallmark · shape: Workbench · genre: modern-minimal · theme: Cobalt (deal: manual) · job: try · draw: manual
  * hero: Stage · nav: edge-aligned · footer: mast · imagery: the product (two HyperFrames renders of the plugin in use, the lesson built as graphite panes) · signature: the real lesson playing beside a copyable install command, over an ASCII field made of the lesson's own glyphs
- * axes: light/grotesk-sans/cool · posture: restrained · contrast: pass · fold: pass · v2.0.0 */
+ * modes: light+dark · axes: light/grotesk-sans/cool · posture: restrained · contrast: pass · fold: pass · v2.0.0 */
 /* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 · weakest: P, a plugin page argues little; leaned on the port to LearnHarness as the one claim a reader could weigh */
 /* Hallmark · waive 47a: the videos show a drawn terminal window; they are renders of the real CLI flow, made for the README, not page chrome */
 @import url("./tokens.css");
 @import url("./base.css");
 
 :root { --color-success-on-dark: oklch(80% 0.13 155); --color-error-on-dark: oklch(76% 0.13 25); --shadow-lift: 0 24px 48px -24px oklch(21% 0.028 262 / 0.35); }
+[data-mode="dark"] { --shadow-lift: 0 0 0 1px var(--color-rule); }
+@media (prefers-color-scheme: dark) { :root:not([data-mode]) { --shadow-lift: 0 0 0 1px var(--color-rule); } }
 
 /* chrome */
 .skip { position: absolute; left: var(--space-md); top: calc(-1 * var(--space-3xl)); z-index: var(--z-modal); padding: var(--space-xs) var(--space-md); background: var(--color-ink); color: var(--color-paper); }
@@ -36,6 +38,8 @@ h3 { font-weight: 500; line-height: 1.2; }
 .nav__links { display: flex; align-items: center; gap: var(--space-lg); margin: 0; padding: 0; list-style: none; font: 500 var(--text-sm)/1 var(--font-display); }
 .nav__links a:not(.key) { color: var(--color-ink-2); text-decoration: none; }
 .nav__links a:not(.key):hover { color: var(--color-accent); }
+.mode-toggle[aria-pressed="true"] { box-shadow: var(--shadow-key-press); transform: translateY(2px); }
+html:not(.js) .mode-toggle { display: none; }
 
 /* hero */
 .hero { position: relative; isolation: isolate; padding-block: var(--space-3xl); min-height: min(calc(100svh - 64px), 980px); display: grid; align-items: center; }
@@ -133,7 +137,7 @@ tbody tr:first-child td:first-child { padding-left: var(--space-md); }
 .routes p code { color: var(--color-graphite-ink); }
 .routes .cmd { align-items: flex-start; padding-block: var(--space-sm); }
 .routes .cmd code { white-space: normal; overflow-wrap: break-word; line-height: 1.5; padding-top: var(--space-xs); }
-.install .cmd .key { background: var(--color-graphite-ink); }
+.install .cmd .key { background: var(--color-graphite-ink); color: var(--color-graphite); }
 .install__needs { margin-top: var(--space-2xl); font-size: var(--text-sm); color: var(--color-graphite-muted); }
 
 .foot { padding-block: var(--space-3xl) var(--space-2xl); }
@@ -147,7 +151,7 @@ tbody tr:first-child td:first-child { padding-left: var(--space-md); }
   .practice__text { order: -1; }
   .term { min-height: 0; padding: var(--space-lg); font-size: var(--text-sm); }
   .routes { grid-template-columns: minmax(0, 1fr); }
-  .nav__links li:not(:last-child) { display: none; }
+  .nav__links li:not(.keep) { display: none; }
   td:first-child { width: auto; }
 }
 @media (max-width: 40rem) {

@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>try { const m = localStorage.getItem("mode"); if (m) document.documentElement.dataset.mode = m; } catch {}</script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -25,7 +26,8 @@
           <li><a href="#loop">How a lesson runs</a></li>
           <li><a href="#practice">Practice</a></li>
           <li><a href="#port">LearnHarness</a></li>
-          <li><a class="key key--small" href="#install">Install</a></li>
+          <li class="keep"><button class="key key--small mode-toggle" type="button" aria-pressed="false">Dark mode</button></li>
+          <li class="keep"><a class="key key--small" href="#install">Install</a></li>
         </ul>
       </nav>
     </div>
@@ -189,12 +191,12 @@
         <ol class="routes">
           <li>
             <h3>At the Claude Code prompt</h3>
-            <div class="cmd cmd--dark cut"><code id="cmd-a">/plugin install learn <span class="nb">--marketplace</span> judzos/claude-learn</code><button class="key copy" type="button" data-copy="cmd-a">Copy</button></div>
+            <div class="cmd cmd--dark cut"><code id="cmd-a">/plugin install learn <span class="nb">--marketplace</span> <span class="nb">judzos/claude-learn</span></code><button class="key copy" type="button" data-copy="cmd-a">Copy</button></div>
             <p>Answer y to add the marketplace, then pick a scope.</p>
           </li>
           <li>
             <h3>From a shell</h3>
-            <div class="cmd cmd--dark cut"><code id="cmd-b">claude plugin install learn <span class="nb">--marketplace</span> judzos/claude-learn</code><button class="key copy" type="button" data-copy="cmd-b">Copy</button></div>
+            <div class="cmd cmd--dark cut"><code id="cmd-b">claude plugin install learn <span class="nb">--marketplace</span> <span class="nb">judzos/claude-learn</span></code><button class="key copy" type="button" data-copy="cmd-b">Copy</button></div>
           </li>
           <li>
             <h3>In the desktop app</h3>
