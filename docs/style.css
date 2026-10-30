@@ -138,9 +138,8 @@ tbody tr:first-child td:first-child { padding-left: var(--space-md); }
 
 .foot { padding-block: var(--space-3xl) var(--space-2xl); }
 .foot__mark { font: 600 clamp(4rem, 12vw, 10rem)/0.9 var(--font-display); letter-spacing: -0.045em; color: var(--color-ink); }
-.foot__links { display: flex; flex-wrap: wrap; gap: var(--space-sm) var(--space-xl); margin: var(--space-xl) 0 var(--space-lg); padding: 0; list-style: none; }
+.foot__links { display: flex; flex-wrap: wrap; gap: var(--space-sm) var(--space-xl); margin: var(--space-xl) 0 0; padding: 0; list-style: none; }
 .foot__links a { color: var(--color-ink); }
-.foot__legal { font-size: var(--text-sm); color: var(--color-muted); }
 
 @media (max-width: 60rem) {
   .hero { min-height: 0; padding-block: var(--space-2xl) var(--space-3xl); }
