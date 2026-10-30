@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>learn for Claude Code: a port of LearnHarness</title>
+  <meta name="description" content="A Claude Code plugin that probes what you know, plans the steps to your goal and checks each one. Ported from LearnHarness.">
+  <meta property="og:title" content="learn for Claude Code">
+  <meta property="og:description" content="Learn anything, one checked step at a time. A Claude Code port of LearnHarness.">
+  <meta property="og:image" content="https://judzos.github.io/claude-learn/media/learn-demo.jpg">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <div class="container nav__row">
+      <a class="wordmark" href="#top" aria-label="learn, home">learn <span>for Claude Code</span></a>
+      <nav aria-label="Sections">
+        <ul class="nav__links">
+          <li><a href="#loop">How a lesson runs</a></li>
+          <li><a href="#practice">Practice</a></li>
+          <li><a href="#port">LearnHarness</a></li>
+          <li><a class="key key--small" href="#install">Install</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <canvas class="field" aria-hidden="true"></canvas>
+      <div class="container hero__grid">
+        <div class="hero__text">
+          <h1>Learn anything, one checked step.</h1>
+          <p class="lead">A Claude Code plugin that teaches from where your understanding ends.</p>
+          <div class="cmd cut">
+            <code id="cmd-hero">/plugin install learn --marketplace judzos/claude-learn</code>
+            <button class="key key--primary copy" type="button" data-copy="cmd-hero">Copy</button>
+          </div>
+          <p class="hero__port">A port of <a href="https://learnharness.ai/">LearnHarness</a> by Amos Blomqvist, so it runs on your Claude subscription. <a href="https://github.com/judzos/claude-learn">Source on GitHub</a></p>
+        </div>
+        <figure class="player cut">
+          <video class="player__video" src="media/learn-demo.mp4" poster="media/learn-demo.jpg" width="1920" height="1080" muted loop playsinline preload="metadata" data-autoplay aria-label="A lesson on Bayes' theorem in Claude Code: the probe quiz, the plan map, a checked step and the knowledge graph"></video>
+          <button class="player__toggle key key--small" type="button" aria-pressed="false">Play</button>
+        </figure>
+      </div>
+    </section>
+
+    <section class="loop" id="loop">
+      <div class="container">
+        <div class="head head--split">
+          <h2>How a lesson runs</h2>
+          <p class="lead">Run <code>/learn:teach &lt;topic&gt;</code>. The lesson note opens in Obsidian and fills in as you go.</p>
+        </div>
+        <div class="switch">
+          <div class="switch__tabs" role="tablist" aria-label="Lesson phases">
+            <button type="button" role="tab" id="t-probe" aria-controls="p-probe" aria-selected="true">Probe</button>
+            <button type="button" role="tab" id="t-plan" aria-controls="p-plan" aria-selected="false" tabindex="-1">Plan</button>
+            <button type="button" role="tab" id="t-teach" aria-controls="p-teach" aria-selected="false" tabindex="-1">Teach</button>
+            <button type="button" role="tab" id="t-graph" aria-controls="p-graph" aria-selected="false" tabindex="-1">Graph</button>
+          </div>
+
+          <div class="switch__panel" role="tabpanel" id="p-probe" aria-labelledby="t-probe">
+            <div class="switch__copy">
+              <h3>Find where it runs out</h3>
+              <p>Claude makes your goal concrete, then binary-searches each strand it depends on for a floor you get right and a ceiling you don't.</p>
+            </div>
+            <div class="term graphite cut">
+              <p class="term__head">learn quiz, probe</p>
+              <p>1 in 1000 people have a disease. A test catches 99% of cases, with 1% false positives. You test positive. Chance you're sick?</p>
+              <ol class="term__opts">
+                <li class="is-picked">About 99%</li><li>About 50%</li><li>About 9%</li><li class="dim">I don't know</li>
+              </ol>
+              <p><span class="bad">✗</span> About 99%, you were 95% sure. Correct: about 9%.</p>
+            </div>
+          </div>
+
+          <div class="switch__panel" role="tabpanel" id="p-plan" aria-labelledby="t-plan">
+            <div class="switch__copy">
+              <h3>Map the steps to your goal</h3>
+              <p>A dependency map from your ceiling to the goal. It waits for your go-ahead before teaching starts.</p>
+            </div>
+            <div class="term graphite cut">
+              <p class="term__head">learn plan, goal: read a medical test result</p>
+              <ul class="term__map">
+                <li><span class="ok">✓</span> Conditional probability</li>
+                <li class="is-now"><span class="tok">●</span> Base rates <span class="dim">needs conditional probability</span></li>
+                <li><span class="dim">○</span> Bayes' rule <span class="dim">needs both above</span></li>
+                <li><span class="dim">○</span> Reading a test result <span class="dim">needs Bayes' rule</span></li>
+              </ul>
+              <p class="dim">Type /map to see where you are.</p>
+            </div>
+          </div>
+
+          <div class="switch__panel" role="tabpanel" id="p-teach" aria-labelledby="t-teach">
+            <div class="switch__copy">
+              <h3>Check every step</h3>
+              <p>Each step runs predict, teach, check. After each answer you say how sure you were and what you were thinking.</p>
+            </div>
+            <div class="term graphite cut">
+              <p class="term__head">learn quiz, check on base rates</p>
+              <p>1000 people take that test. About how many of them test positive?</p>
+              <p><span class="ok">✓</span> About 11, you were 75% sure.</p>
+              <p class="dim">1 true positive plus about 10 false positives. The rare condition sets the odds.</p>
+              <p><span class="tok">●</span> Next step: Bayes' rule.</p>
+            </div>
+          </div>
+
+          <div class="switch__panel" role="tabpanel" id="p-graph" aria-labelledby="t-graph">
+            <div class="switch__copy">
+              <h3>Keep what you learned</h3>
+              <p>Propositions and the chains between them go into a knowledge graph in your Obsidian vault, and later lessons build on it.</p>
+            </div>
+            <div class="term graphite cut">
+              <p class="term__head">graph/nodes.jsonl</p>
+              <ul class="term__map">
+                <li><span class="tok">+</span> A rare condition makes most positives false.</li>
+                <li><span class="tok">+</span> P(A | B) = P(B | A) P(A) / P(B)</li>
+                <li><span class="dim">chain</span> both of these entail: a 99% test can mean 9%</li>
+              </ul>
+              <p class="dim">Linked to the lesson note in your vault.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="practice" id="practice">
+      <div class="container practice__grid">
+        <figure class="player cut">
+          <video class="player__video" src="media/practice-demo.mp4" poster="media/practice-demo.jpg" width="1920" height="1080" muted loop playsinline preload="none" data-autoplay aria-label="A practice session: a spam-filter problem, two hints from the ladder, a correct answer and a retest queued"></video>
+          <button class="player__toggle key key--small" type="button" aria-pressed="false">Play</button>
+        </figure>
+        <div class="practice__text">
+          <h2>Practice that never names the idea</h2>
+          <p class="lead"><code>/learn:practice</code> poses problems where what you learned has to come to mind on its own.</p>
+          <dl class="facts">
+            <div><dt>A hidden answer</dt><dd>Claude solves each problem first and shows the solution only after it's concluded.</dd></div>
+            <div><dt>Six rungs of hints</dt><dd>From “re-read the givens” to a worked step, one rung per request.</dd></div>
+            <div><dt>Retests</dt><dd>Anything missed comes back in a new form before the session ends.</dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section class="commands" aria-labelledby="commands-h">
+      <div class="container">
+        <h2 id="commands-h">Five commands to know</h2>
+        <table>
+          <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>/learn:teach &lt;topic&gt;</code></td><td>Probe, plan and teach a lesson</td></tr>
+            <tr><td><code>/learn:practice [topic]</code></td><td>Problems on what you already learned</td></tr>
+            <tr><td><code>/map</code></td><td>Show the lesson's plan map</td></tr>
+            <tr><td><code>/graph</code></td><td>Add this session to the knowledge graph</td></tr>
+            <tr><td><code>/md-log &lt;note.md&gt;</code></td><td>Mirror the session into an Obsidian note</td></tr>
+          </tbody>
+        </table>
+        <p class="caption"><code>/learn</code> prints the full list.</p>
+      </div>
+    </section>
+
+    <section class="port" id="port">
+      <div class="container port__grid">
+        <div class="port__lead">
+          <h2>Built on LearnHarness</h2>
+          <p class="lead"><a href="https://learnharness.ai/">LearnHarness</a> is Amos Blomqvist's open-source desktop app for learning with AI. This plugin brings its method into Claude Code.</p>
+          <a class="key" href="https://learnharness.ai/">Get the LearnHarness app</a>
+        </div>
+        <dl class="rows">
+          <div><dt>Kept</dt><dd>The teaching, probing, practice and extraction prompts, and the graph format.</dd></div>
+          <div><dt>Changed</dt><dd>Runs on a Claude subscription instead of API keys. Quizzes use Claude Code's popup, and background jobs are subagents.</dd></div>
+          <div><dt>Left out</dt><dd>The cost meter, dictation and the in-app updater.</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="install graphite" id="install">
+      <div class="container">
+        <div class="head head--split">
+          <h2>Install it</h2>
+          <p class="lead">Then run <code>/learn:teach</code> with any topic.</p>
+        </div>
+        <ol class="routes">
+          <li>
+            <h3>At the Claude Code prompt</h3>
+            <div class="cmd cmd--dark cut"><code id="cmd-a">/plugin install learn <span class="nb">--marketplace</span> judzos/claude-learn</code><button class="key copy" type="button" data-copy="cmd-a">Copy</button></div>
+            <p>Answer y to add the marketplace, then pick a scope.</p>
+          </li>
+          <li>
+            <h3>From a shell</h3>
+            <div class="cmd cmd--dark cut"><code id="cmd-b">claude plugin install learn <span class="nb">--marketplace</span> judzos/claude-learn</code><button class="key copy" type="button" data-copy="cmd-b">Copy</button></div>
+          </li>
+          <li>
+            <h3>In the desktop app</h3>
+            <p>Click + next to the prompt box, then Plugins. Add the marketplace <code>judzos/claude-learn</code>, then add the plugin.</p>
+          </li>
+        </ol>
+        <p class="install__needs">Diagrams need <code>rsvg-convert</code> or ImageMagick, and Node for Mermaid. Interactive demos need Node and Chrome or Chromium.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="container">
+      <p class="foot__mark">learn</p>
+      <ul class="foot__links">
+        <li><a href="https://github.com/judzos/claude-learn">Source on GitHub</a></li>
+        <li><a href="https://learnharness.ai/">LearnHarness</a></li>
+        <li><a href="https://github.com/amosblomqvist/learnharness">LearnHarness source</a></li>
+        <li><a href="https://github.com/judzos/claude-learn/blob/main/LICENSE">AGPL-3.0 license</a></li>
+      </ul>
+      <p class="foot__legal">Contains prompts and code adapted from LearnHarness, © Amos Blomqvist, AGPL-3.0.</p>
+    </div>
+  </footer>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<template>
+  <link rel="stylesheet" href="assets/ui.css" />
+  <style>
+    #root { position: absolute; inset: 0; }
+    .say { white-space: normal; }
+    #p3-status { position: absolute; left: 40px; right: 40px; bottom: 24px; font-size: 22px; color: #8a8a8a; border-top: 2px solid #2e2e2e; padding-top: 10px; }
+  </style>
+  <div id="root" data-composition-id="p3" data-width="1920" data-height="1080">
+    <div class="ground"></div>
+    <h1 class="cap" id="p3-cap"><span class="w">What</span><span class="w">you</span><span class="w">miss</span><span class="w">comes</span><span class="w">back</span><span class="w">in</span><span class="w">a</span><span class="w">fresh</span><span class="w">form.</span></h1>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="t" data-layout-ignore>claude — ~/notes</span></div>
+      <div class="body" id="p3-body">
+        <div class="prompt say"><span class="acc">&gt;</span> 9.5 spam flagged, 1.8 real flagged. So 9.5 / 11.3, about 84%.</div>
+        <div class="line" id="p3-v" style="margin-top:28px"><span class="ok">✓</span> About 84%</div>
+        <div class="line dim" id="p3-c">  You set the base rate before the flag. That made it.</div>
+        <div class="line" id="p3-k" style="margin-top:28px"><span class="acc">⏺</span> learn · conclude <span class="dim">(needed hint R1)</span></div>
+        <div class="line dim" id="p3-s">  Model solution revealed in your lesson note.</div>
+        <div class="line" id="p3-q" style="margin-top:28px"><span class="acc">⏺</span> Retest queued: base rates, new setting.</div>
+      </div>
+      <div id="p3-status" data-layout-ignore>practice: 1 concluded · 1 retest before the end</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#p3-body", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.15, ease: "power4.out" }, 0);
+    tl.fromTo("#p3-cap .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.08, ease: "power4.out" }, 0.1);
+    tl.fromTo(["#p3-v", "#p3-c"], { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, stagger: 0.3, ease: "power4.out" }, 1.2);
+    tl.fromTo(["#p3-k", "#p3-s"], { opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.35, ease: "none" }, 2.6);
+    tl.fromTo("#p3-q", { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "none" }, 4.0);
+    window.__timelines["p3"] = tl;
+  </script>
+</template>
