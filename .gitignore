@@ -3,3 +3,5 @@ node_modules/
 *.log
 .DS_Store
 demo/video/.hyperframes/
+demo/practice-video/.hyperframes/
+.claude/launch.json

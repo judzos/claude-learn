@@ -1,0 +1,44 @@
+<template>
+  <link rel="stylesheet" href="assets/ui.css" />
+  <style>
+    #root { position: absolute; inset: 0; }
+    .ladder { display: flex; gap: 14px; margin-top: 30px; }
+    .rung { width: 96px; height: 56px; border: 2px solid #3a3a3a; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #8a8a8a; font-size: 28px; }
+    .rung.on { border-color: #e8875f; color: #1a1a1a; background: #e8875f; font-weight: 700; }
+    .rung.used { border-color: #e8875f; color: #e8875f; }
+    .say { white-space: normal; }
+    #p2-status { position: absolute; left: 40px; right: 40px; bottom: 24px; font-size: 22px; color: #8a8a8a; border-top: 2px solid #2e2e2e; padding-top: 10px; }
+  </style>
+  <div id="root" data-composition-id="p2" data-width="1920" data-height="1080">
+    <div class="ground"></div>
+    <h1 class="cap" id="p2-cap"><span class="w">Stuck?</span><span class="w">Hints</span><span class="w">climb</span><span class="w">one</span><span class="w">rung</span><span class="w">at</span><span class="w">a</span><span class="w">time.</span></h1>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="t" data-layout-ignore>claude — ~/notes</span></div>
+      <div class="body" id="p2-body">
+        <div class="prompt say"><span class="acc">&gt;</span> Probably 95%? Not sure how the one in ten fits.</div>
+        <div class="line" id="p2-r1" style="margin-top:28px"><span class="acc">⏺</span> Re-read the third sentence.</div>
+        <div class="ladder" id="p2-lad">
+          <div class="rung" id="p2-r0">R0</div><div class="rung">R1</div><div class="rung">R2</div>
+          <div class="rung">R3</div><div class="rung">R4</div><div class="rung">R5</div>
+        </div>
+        <div class="prompt say" id="p2-u2" style="margin-top:34px"><span class="acc">&gt;</span> Still stuck.</div>
+        <div class="line say" id="p2-r2" style="margin-top:24px"><span class="acc">⏺</span> Out of 100 emails, how many real</div>
+        <div class="line" id="p2-r3">  ones get flagged too?</div>
+      </div>
+      <div id="p2-status" data-layout-ignore>hint ladder: one rung per request</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#p2-body", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.15, ease: "power4.out" }, 0);
+    tl.fromTo("#p2-cap .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.08, ease: "power4.out" }, 0.1);
+    tl.set(["#p2-r1", "#p2-u2", "#p2-r2", "#p2-r3"], { opacity: 0 }, 0);
+    tl.set("#p2-r1", { opacity: 1 }, 1.0);
+    tl.set("#p2-lad .rung:nth-child(1)", { className: "rung on" }, 1.0);
+    tl.set("#p2-u2", { opacity: 1 }, 2.6);
+    tl.set("#p2-lad .rung:nth-child(1)", { className: "rung used" }, 3.4);
+    tl.set("#p2-lad .rung:nth-child(2)", { className: "rung on" }, 3.4);
+    tl.fromTo(["#p2-r2", "#p2-r3"], { opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.3, ease: "none", immediateRender: false }, 3.4);
+    window.__timelines["p2"] = tl;
+  </script>
+</template>

@@ -1,0 +1,28 @@
+<template>
+  <link rel="stylesheet" href="assets/ui.css" />
+  <style>
+    #root { position: absolute; inset: 0; }
+    #p1-cmd { display: inline-block; clip-path: inset(0 100% 0 0); }
+    .prob { white-space: normal; margin-top: 10px; }
+  </style>
+  <div id="root" data-composition-id="p1" data-width="1920" data-height="1080">
+    <div class="ground"></div>
+    <h1 class="cap" id="p1-cap"><span class="w">Practice</span><span class="w">never</span><span class="w">names</span><span class="w">the</span><span class="w">idea</span><span class="w">it</span><span class="w">tests.</span></h1>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="t" data-layout-ignore>claude — ~/notes</span></div>
+      <div class="body" id="p1-body">
+        <div class="prompt"><span class="acc">&gt;</span> <span id="p1-cmd">/learn:practice Bayes' theorem</span></div>
+        <div class="line" id="p1-r1" style="margin-top:28px"><span class="acc">⏺</span> learn · problem <span class="dim">(model solution committed, hidden)</span></div>
+        <div class="prob" id="p1-r2">A filter flags 95% of spam and 2% of real mail. One email in ten is spam.</div>
+        <div class="prob" id="p1-r3" data-hold>An email gets flagged. How likely is it to be spam?</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#p1-cap .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.08, ease: "power4.out" }, 0.15);
+    tl.fromTo("#p1-cmd", { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 1.1, ease: "steps(30)" }, 0.5);
+    tl.fromTo(["#p1-r1", "#p1-r2", "#p1-r3"], { opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.45, ease: "none" }, 2.0);
+    window.__timelines["p1"] = tl;
+  </script>
+</template>
