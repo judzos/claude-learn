@@ -1,0 +1,42 @@
+<template>
+  <link rel="stylesheet" href="assets/ui.css" />
+  <style>
+    #root { position: absolute; inset: 0; }
+    #s5-g { position: absolute; left: 0; top: 70px; width: 960px; height: 600px; }
+    #s5-g text { font-family: Inter, sans-serif; font-size: 28px; fill: #e6e6e6; paint-order: stroke; stroke: #1a1a1a; stroke-width: 12px; stroke-linejoin: round; }
+    #s5-g line { stroke: #5a5a5a; stroke-width: 3; }
+    #s5-install { position: absolute; left: 120px; top: 640px; width: 600px; font-family: "JetBrains Mono", monospace; font-size: 28px; line-height: 1.45; color: #fff; }
+    #s5-install .lbl { font-family: Inter, sans-serif; font-weight: 700; font-size: 30px; color: #ffe6db; display: block; margin-bottom: 8px; }
+    #s5-cap { top: 250px; }
+  </style>
+  <div id="root" data-composition-id="s5" data-width="1920" data-height="1080">
+    <div class="ground"></div>
+    <h1 class="cap" id="s5-cap"><span class="w">What</span><span class="w">you</span><span class="w">learn</span><span class="w">joins</span><span class="w">your</span><span class="w">knowledge</span><span class="w">graph.</span></h1>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="t" data-layout-ignore>Obsidian — learn/graph</span></div>
+      <div class="body" id="s5-body">
+        <div class="line"><span class="acc">⏺</span> Added 4 propositions to your graph</div>
+        <svg id="s5-g" viewBox="0 0 960 600">
+          <line id="s5-e1" x1="230" y1="70" x2="330" y2="320" />
+          <line id="s5-e2" x1="730" y1="70" x2="330" y2="320" />
+          <line id="s5-e3" x1="330" y1="320" x2="690" y2="460" />
+          <line id="s5-e4" x1="730" y1="70" x2="690" y2="460" />
+          <g id="s5-a"><circle cx="230" cy="70" r="16" fill="#6ee7a0" /><text x="230" y="122" text-anchor="middle">P(A|B): the share of B</text><text x="230" y="154" text-anchor="middle">where A holds</text></g>
+          <g id="s5-b"><circle cx="730" cy="70" r="16" fill="#6ee7a0" /><text x="730" y="122" text-anchor="middle">Rare conditions make</text><text x="730" y="154" text-anchor="middle">most positives false</text></g>
+          <g id="s5-c"><circle cx="330" cy="320" r="20" fill="#e8875f" /><text x="330" y="374" text-anchor="middle">Bayes' rule weighs evidence</text><text x="330" y="406" text-anchor="middle">by the base rate</text></g>
+          <g id="s5-d"><circle cx="690" cy="460" r="16" fill="#e8875f" /><text x="690" y="512" text-anchor="middle">A positive test for a rare</text><text x="690" y="544" text-anchor="middle">disease is often wrong</text></g>
+        </svg>
+      </div>
+    </div>
+    <div id="s5-install"><span class="lbl">Install</span>claude plugin install learn<br />--marketplace judzos/claude-learn</div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#s5-body", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.15, ease: "power4.out" }, 0);
+    tl.fromTo("#s5-cap .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.08, ease: "power4.out" }, 0.1);
+    tl.fromTo(["#s5-a", "#s5-b", "#s5-c", "#s5-d"], { opacity: 0, scale: 0.6, transformOrigin: "50% 15%" }, { opacity: 1, scale: 1, duration: 0.5, stagger: 0.35, ease: "back.out(1.4)" }, 0.4);
+    tl.fromTo(["#s5-e1", "#s5-e2", "#s5-e3", "#s5-e4"], { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.2, ease: "none" }, 1.2);
+    tl.fromTo("#s5-install", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power4.out" }, 2.0);
+    window.__timelines["s5"] = tl;
+  </script>
+</template>

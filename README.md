@@ -1,5 +1,7 @@
 # learn
 
+![learn: probe, plan, checked steps, knowledge graph](demo/learn-demo.gif)
+
 A learning harness for Claude Code: it measures where your understanding ends, plans a dependency map from there to your goal, and teaches one reasoning step at a time, checking each step before building on it. Practice sessions make what you learned come to mind without being named, and a knowledge graph in your Obsidian vault carries it across sessions.
 
 It is a port of [LearnHarness](https://github.com/amosblomqvist/learnharness) by Amos Blomqvist to Claude Code, so it runs on a Claude subscription instead of API keys. The teaching, probing, practice and extraction prompts come from LearnHarness and are adapted to Claude Code's tools.
