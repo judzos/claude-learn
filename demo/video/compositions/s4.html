@@ -1,0 +1,71 @@
+<template>
+  <link rel="stylesheet" href="assets/ui.css" />
+  <style>
+    #root { position: absolute; inset: 0; }
+    .stack { position: relative; height: 470px; }
+    .stack .pop { position: absolute; left: 0; right: 0; top: 0; }
+    #s4-status { position: absolute; left: 40px; right: 40px; bottom: 24px; font-size: 22px; color: #8a8a8a; border-top: 2px solid #2e2e2e; padding-top: 10px; }
+  </style>
+  <div id="root" data-composition-id="s4" data-width="1920" data-height="1080">
+    <div class="ground"></div>
+    <h1 class="cap" id="s4-cap"><span class="w">Every</span><span class="w">step</span><span class="w">is</span><span class="w">checked</span><span class="w">before</span><span class="w">the</span><span class="w">next.</span></h1>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="t" data-layout-ignore>claude — ~/notes</span></div>
+      <div class="body" id="s4-body">
+        <div class="line"><span class="acc">⏺</span> learn · quiz <span class="dim">(check · base rates)</span></div>
+        <div class="stack">
+          <div class="pop" id="s4-p1">
+            <span class="chip" data-layout-ignore>Check</span>
+            <div class="q">1000 people take that test. About how many of them test positive?</div>
+            <div class="opt"><span class="sel" id="s4-c1">❯</span>1. About 1</div>
+            <div class="opt">2. About 11</div>
+            <div class="opt">3. About 99</div>
+            <div class="opt dim">4. I don't know</div>
+            <div class="hint" data-layout-ignore>Enter to select · ↑/↓ to navigate · Esc to cancel</div>
+          </div>
+          <div class="pop" id="s4-p2">
+            <span class="chip" data-layout-ignore>Confidence</span>
+            <div class="q">How sure are you?</div>
+            <div class="opt"><span class="sel" id="s4-c2">❯</span>1. 95%</div>
+            <div class="opt">2. 75%</div>
+            <div class="opt">3. 50%</div>
+            <div class="opt">4. 25%</div>
+            <div class="hint" data-layout-ignore>Or type a percentage</div>
+          </div>
+          <div class="pop" id="s4-p3">
+            <span class="chip" data-layout-ignore>Thinking</span>
+            <div class="q">What were you thinking?</div>
+            <div class="opt"><span class="sel" id="s4-c3">❯</span>1. Type it out</div>
+            <div class="opt">2. I was guessing</div>
+            <div class="opt">3. Nothing to add</div>
+          </div>
+          <div id="s4-verdict" style="position:absolute;left:0;right:0;top:24px">
+            <div class="line"><span class="ok">✓</span> About 11 <span class="dim">· you were 75% sure</span></div>
+            <div class="line dim" style="margin-top:20px">1 true positive + ~10 false positives.</div>
+            <div class="line dim">The rare condition sets the odds.</div>
+            <div class="line" style="margin-top:28px"><span class="acc">⏺</span> Next step: Bayes' rule.</div>
+          </div>
+        </div>
+      </div>
+      <div id="s4-status" data-layout-ignore>plan 2/4: Base rates</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const step = 48;
+    tl.fromTo("#s4-body", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.15, ease: "power4.out" }, 0);
+    tl.fromTo("#s4-cap .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.08, ease: "power4.out" }, 0.1);
+    tl.set(["#s4-p2", "#s4-p3", "#s4-verdict"], { opacity: 0 }, 0);
+    tl.fromTo("#s4-p1", { opacity: 0, scale: 0.97 }, { opacity: 1, scale: 1, duration: 0.4, ease: "expo.out" }, 0.25);
+    tl.fromTo("#s4-c1", { y: 0 }, { y: step, duration: 0.01, ease: "none" }, 2.4);
+    tl.set("#s4-p1", { opacity: 0 }, 3.6);
+    tl.set("#s4-p2", { opacity: 1 }, 3.6);
+    tl.fromTo("#s4-c2", { y: 0 }, { y: step, duration: 0.01, ease: "none" }, 4.7);
+    tl.set("#s4-p2", { opacity: 0 }, 5.4);
+    tl.set("#s4-p3", { opacity: 1 }, 5.4);
+    tl.fromTo("#s4-c3", { y: 0 }, { y: step * 2, duration: 0.3, ease: "steps(2)" }, 6.4);
+    tl.set("#s4-p3", { opacity: 0 }, 7.15);
+    tl.fromTo("#s4-verdict", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power4.out", immediateRender: false }, 7.2);
+    window.__timelines["s4"] = tl;
+  </script>
+</template>

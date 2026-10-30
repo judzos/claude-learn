@@ -1,0 +1,37 @@
+<template>
+  <link rel="stylesheet" href="assets/ui.css" />
+  <style>
+    #root { position: absolute; inset: 0; }
+    .pl { white-space: pre; height: 52px; }
+    .need { color: #8a8a8a; }
+    #s3-status { position: absolute; left: 40px; right: 40px; bottom: 24px; font-size: 22px; color: #8a8a8a; border-top: 2px solid #2e2e2e; padding-top: 10px; }
+  </style>
+  <div id="root" data-composition-id="s3" data-width="1920" data-height="1080">
+    <div class="ground"></div>
+    <h1 class="cap" id="s3-cap"><span class="w">Then</span><span class="w">it</span><span class="w">maps</span><span class="w">the</span><span class="w">steps</span><span class="w">to</span><span class="w">your</span><span class="w">goal.</span></h1>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="t" data-layout-ignore>claude — ~/notes</span></div>
+      <div class="body" id="s3-body">
+        <div class="line"><span class="acc">⏺</span> learn · plan</div>
+        <div class="line dim" style="margin:6px 0 22px">Goal: read a medical test result correctly</div>
+        <div class="pl" id="s3-n1"><span class="ok">✓</span> Conditional probability</div>
+        <div class="pl" id="s3-n2"><span class="acc">●</span> Base rates  <span class="need">← Conditional probability</span></div>
+        <div class="pl" id="s3-n3"><span class="dim">○</span> Bayes' rule  <span class="need">← Conditional prob., Base rates</span></div>
+        <div class="pl" id="s3-n4"><span class="dim">○</span> Reading a test result  <span class="need">← Bayes' rule</span></div>
+        <div class="line" id="s3-go" style="margin-top:30px"><span class="acc">⏺</span> Ready to start with base rates?</div>
+        <div class="prompt" id="s3-y" style="margin-top:14px"><span class="acc">&gt;</span> go</div>
+      </div>
+      <div id="s3-status" data-layout-ignore>plan 2/4: Base rates</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#s3-body", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.15, ease: "power4.out" }, 0);
+    tl.fromTo("#s3-cap .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.08, ease: "power4.out" }, 0.1);
+    tl.fromTo(["#s3-n1", "#s3-n2", "#s3-n3", "#s3-n4"], { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: 0.5, stagger: 0.6, ease: "expo.out" }, 0.5);
+    tl.fromTo("#s3-go", { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "none" }, 3.3);
+    tl.fromTo("#s3-y", { opacity: 0 }, { opacity: 1, duration: 0.1, ease: "none" }, 4.3);
+    tl.fromTo("#s3-status", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "none" }, 0.4);
+    window.__timelines["s3"] = tl;
+  </script>
+</template>

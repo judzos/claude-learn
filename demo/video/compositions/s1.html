@@ -1,0 +1,28 @@
+<template>
+  <link rel="stylesheet" href="assets/ui.css" />
+  <style>
+    #root { position: absolute; inset: 0; }
+    #s1-cmd { display: inline-block; clip-path: inset(0 100% 0 0); }
+  </style>
+  <div id="root" data-composition-id="s1" data-width="1920" data-height="1080">
+    <div class="ground"></div>
+    <h1 class="cap" id="s1-cap"><span class="w">Learn</span><span class="w">anything,</span><span class="w">one</span><span class="w">checked</span><span class="w">step</span><span class="w">at</span><span class="w">a</span><span class="w">time.</span></h1>
+    <div class="win">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="t" data-layout-ignore>claude — ~/notes</span></div>
+      <div class="body" id="s1-body">
+        <div class="line dim">✻ Claude Code · plugin: learn</div>
+        <div class="prompt" style="margin-top:24px"><span class="acc">&gt;</span> <span id="s1-cmd">/learn:teach Bayes' theorem</span></div>
+        <div class="line" id="s1-r1" style="margin-top:28px"><span class="acc">⏺</span> Opened your lesson note in Obsidian.</div>
+        <div class="line" id="s1-r2"><span class="acc">⏺</span> First, let's find where your</div>
+        <div class="line" id="s1-r3">  understanding of it ends.</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#s1-cap .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.08, ease: "power4.out" }, 0.15);
+    tl.fromTo("#s1-cmd", { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 1.1, ease: "steps(27)" }, 0.5);
+    tl.fromTo(["#s1-r1", "#s1-r2", "#s1-r3"], { opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.35, ease: "none" }, 2.0);
+    window.__timelines["s1"] = tl;
+  </script>
+</template>
