@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://judzos.github.io/claude-learn/"><img alt="Site and demos" src="https://img.shields.io/badge/site-judzos.github.io%2Fclaude--learn-2f6fde"></a>
-  <img alt="Version 0.2.2" src="https://img.shields.io/badge/version-0.2.2-2f6fde">
+  <img alt="Version 0.3.0" src="https://img.shields.io/badge/version-0.3.0-2f6fde">
   <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-555"></a>
   <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-555">
 </p>
@@ -40,6 +40,11 @@ The [site](https://judzos.github.io/claude-learn/) has the lesson's opening ques
   2. **Plan.** Claude writes the dependency map (`plan`) and presents it, then waits for your go-ahead.
   3. **Teach.** Each step runs predict, teach, check. Every quiz is tagged with its plan node, so the map tracks where you are.
 - `/learn:practice [topic]` runs practice problems. Claude solves each problem before posing it, and the model solution stays hidden until the problem is concluded. Hints climb a six-rung ladder, one rung per request, and anything missed is retested in a fresh form before the session ends.
+- `/learn:guide <subject> [files…]` builds a study guide website for a whole subject, test or course, as one HTML file that opens offline:
+  - **What goes in.** Claude reads everything you point it at (outlines, slides, PDFs, past tests) plus your knowledge graph, then asks how detailed you want it and whether you want diagrams, a day-by-day plan, a timed mock test or flashcards.
+  - **What's in a module.** The idea, the formulas or key facts, the method, worked examples revealed step by step, common mistakes, check-yourself questions with instant feedback (multiple choice, numeric, free recall), and practice problems with hidden solutions. Claude solves every question before writing it in.
+  - **The progress map.** The home page maps the subject's ideas by what builds on what. Ideas already in your knowledge graph show green, new ones dashed, and modules you mark done get a tick. Progress saves in your browser.
+  - **Where it goes.** The guide lands in `<learning folder>/guides/<subject>.html` and opens in your browser. Running the command again on the same subject refreshes the guide and keeps your progress.
 - `/map` shows the lesson's plan map: a pane where the terminal is wide enough, otherwise text. The status line also shows the current node.
 - `/graph` extracts what this session taught into the knowledge graph, and `/graph-import <note.md>` imports your own notes. Both run in the background.
 - `/md-log <note.md>` and `/md-unlog` mirror the session into a note as Obsidian callouts, and stop it. `/learn:teach` and `/learn:practice` start a lesson note on their own and open it in Obsidian.
@@ -50,6 +55,7 @@ The [site](https://judzos.github.io/claude-learn/) has the lesson's opening ques
 - `quiz`: graded multiple choice. You see ✓/✗, the correct answer and the explanation as soon as you answer. "I don't know" is always offered, and options are shuffled. After a graded pick, a second short popup asks how sure you are (or type a percentage). Then, after every answer, "I don't know" included, a third asks what you were thinking: type it, pick "I was guessing", or "Nothing to add". The answer is revealed after that.
 - `explain`: free recall. You answer in your own words, and Claude grades you against an answer it committed to before asking.
 - `probe_done`, `plan`, `problem`, `conclude`: the probe hand-off, the plan map and the practice problems.
+- `guide_paths`: where a study guide and its sources live in the learning folder.
 - `graph_sessions`, `graph_propositions`, `graph_find`, `graph_extract`: reading the knowledge graph and adding to it.
 
 **Agents**
@@ -92,6 +98,7 @@ Diagrams need `rsvg-convert` (or ImageMagick) for SVG, and Node for Mermaid (`np
 2. Answer the probe honestly. "I don't know" is information, not a failure.
 3. When the lesson wraps up, Claude adds it to your knowledge graph. Run `/graph` yourself at any point.
 4. Later, run `/learn:practice <topic>`.
+5. Before a test, run `/learn:guide <test or course>` and point it at the outline.
 
 ## Differences from LearnHarness
 

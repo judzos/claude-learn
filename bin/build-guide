@@ -1,0 +1,201 @@
+#!/usr/bin/env node
+// build-guide — assemble a study guide (one self-contained HTML file) from the
+// sources /learn:guide writes, using the plugin's guide template.
+//
+//   build-guide <source-dir> <out.html>
+//
+// <source-dir> holds:
+//   content.html   the <section class="topic"> blocks (home first), or
+//   parts/*.html   the same blocks split one module per file, joined in name
+//                  order (00-home.html, 01-….html); used when parts/ exists
+//   data.json      {"title", "subtitle", "key", "math", "map": {"nodes", "edges"}}
+//   any images content.html references by relative path (inlined as data: URIs)
+//
+// Prints a summary and every problem it finds. Exits 1 on errors (a broken
+// answer key, a missing section), 0 when the guide was written.
+'use strict'
+const fs = require('fs')
+const path = require('path')
+
+const errors = []
+const warnings = []
+
+function die(msg) {
+  process.stderr.write(`build-guide: ${msg}\n`)
+  process.exit(1)
+}
+
+const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+
+const MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' }
+
+// Local images become data: URIs, so the guide is one file that works anywhere.
+function inlineImages(html, dir) {
+  return html.replace(/(<img\b[^>]*?\bsrc=)(["'])([^"']+)\2/gi, (all, pre, q, src) => {
+    if (/^(data:|https?:|\/\/)/i.test(src)) return all
+    const file = path.resolve(dir, decodeURIComponent(src.replace(/^file:\/\//, '')))
+    const mime = MIME[path.extname(file).toLowerCase()]
+    if (!mime) {
+      errors.push(`image ${src}: unsupported type (use png, jpg, gif, webp or svg)`)
+      return all
+    }
+    if (!fs.existsSync(file)) {
+      errors.push(`image ${src}: not found at ${file}`)
+      return all
+    }
+    return `${pre}${q}data:${mime};base64,${fs.readFileSync(file).toString('base64')}${q}`
+  })
+}
+
+const attr = (tag, name) => {
+  const m = new RegExp(`\\b${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, 'i').exec(tag)
+  return m ? m[2] : undefined
+}
+
+function parseNum(v) {
+  v = String(v).replace(/[$,\s%]/g, '').replace(/−/g, '-')
+  const m = /^(-?\d*\.?\d+)\/(-?\d*\.?\d+)$/.exec(v)
+  if (m) return Number(m[1]) / Number(m[2])
+  return v === '' ? NaN : Number(v)
+}
+
+// The body of the element that opens at `start` (balanced on its tag name).
+function elementBody(html, start, tagName) {
+  const re = new RegExp(`<(/?)${tagName}\\b[^>]*>`, 'gi')
+  re.lastIndex = start
+  let depth = 0
+  let m
+  while ((m = re.exec(html))) {
+    depth += m[1] ? -1 : 1
+    if (depth === 0) return html.slice(start, m.index + m[0].length)
+  }
+  return html.slice(start)
+}
+
+function check(content, data) {
+  const sections = []
+  const secRe = /<section\b[^>]*>/gi
+  let m
+  while ((m = secRe.exec(content))) {
+    const tag = m[0]
+    if (!/\bclass=(["'])[^"']*\btopic\b/i.test(tag)) continue
+    const id = attr(tag, 'id')
+    const body = elementBody(content, m.index, 'section')
+    sections.push({ id, title: attr(tag, 'data-title'), body })
+  }
+  if (!sections.length) errors.push('content.html has no <section class="topic" id="…" data-title="…"> blocks')
+  const ids = new Set()
+  for (const s of sections) {
+    if (!s.id) errors.push(`a section has no id (data-title "${s.title}")`)
+    else if (ids.has(s.id)) errors.push(`duplicate section id "${s.id}"`)
+    else if (!/^[A-Za-z][\w-]*$/.test(s.id)) errors.push(`section id "${s.id}": use letters, digits, - and _ only`)
+    ids.add(s.id)
+    if (!s.title) warnings.push(`section "${s.id}" has no data-title (the nav shows its id)`)
+  }
+  if (sections.length && sections[0].id !== 'home') errors.push('the first section must be id="home"')
+  const home = sections.find(s => s.id === 'home')
+  if (home && !/data-tiles/.test(home.body)) warnings.push('home has no <div data-tiles></div>: no module tiles')
+  if (home && !/data-map/.test(home.body) && data.map?.nodes?.length) warnings.push('home has no <div data-map></div>: the progress map is not shown')
+
+  let checks = 0
+  let practice = 0
+  for (const s of sections) {
+    const where = `section "${s.id}"`
+    const mcqRe = /<div\b[^>]*\bclass=(["'])[^"']*\bmcq\b[^"']*\1[^>]*>/gi
+    let q
+    let n = 0
+    while ((q = mcqRe.exec(s.body))) {
+      n++
+      checks++
+      const body = elementBody(s.body, q.index, 'div')
+      const a = attr(q[0], 'data-a')
+      const opts = (body.match(/<li\b/gi) || []).length
+      if (a === undefined || !/^\d+$/.test(a)) errors.push(`${where}, multiple choice #${n}: data-a must be the 0-based index of the correct option`)
+      else if (+a >= opts) errors.push(`${where}, multiple choice #${n}: data-a="${a}" but it has only ${opts} options`)
+      if (opts < 2) errors.push(`${where}, multiple choice #${n}: needs at least 2 <li> options`)
+      if (!/class=(["'])[^"']*\bwhy\b/.test(body)) warnings.push(`${where}, multiple choice #${n}: no <div class="why"> explanation`)
+    }
+    const numRe = /<div\b[^>]*\bclass=(["'])[^"']*\bnum\b[^"']*\1[^>]*>/gi
+    n = 0
+    while ((q = numRe.exec(s.body))) {
+      n++
+      checks++
+      const a = attr(q[0], 'data-a')
+      if (a === undefined || Number.isNaN(parseNum(a))) errors.push(`${where}, numeric question #${n}: data-a must be a number (got ${a === undefined ? 'nothing' : `"${a}"`})`)
+      const tol = attr(q[0], 'data-tol')
+      if (tol !== undefined && Number.isNaN(Number(tol))) errors.push(`${where}, numeric question #${n}: data-tol must be a number`)
+    }
+    checks += (s.body.match(/<div\b[^>]*\bclass=(["'])[^"']*\brecall\b/gi) || []).length
+    practice += (s.body.match(/<div\b[^>]*\bclass=(["'])[^"']*\bprob\b/gi) || []).length
+  }
+
+  const nodes = data.map?.nodes || []
+  const edges = data.map?.edges || []
+  const nodeIds = new Set()
+  for (const n of nodes) {
+    if (!n.id) errors.push(`a map node has no id (label "${n.label}")`)
+    else if (nodeIds.has(n.id)) errors.push(`duplicate map node id "${n.id}"`)
+    nodeIds.add(n.id)
+    if (!n.label) warnings.push(`map node "${n.id}" has no label`)
+    if (n.module && !ids.has(n.module)) errors.push(`map node "${n.id}" points at module "${n.module}", which is not a section id`)
+    if (!n.module) warnings.push(`map node "${n.id}" has no module: clicking it goes nowhere`)
+  }
+  for (const e of edges) {
+    if (!Array.isArray(e) || e.length !== 2) errors.push(`map edge ${JSON.stringify(e)}: use ["from-id", "to-id"]`)
+    else for (const id of e) if (!nodeIds.has(id)) errors.push(`map edge ${JSON.stringify(e)}: no node "${id}"`)
+  }
+  return { sections, checks, practice, nodes, edges }
+}
+
+function main() {
+  const [srcDir, out] = process.argv.slice(2)
+  if (!srcDir || !out) die('usage: build-guide <source-dir> <out.html>')
+  const contentFile = path.join(srcDir, 'content.html')
+  const partsDir = path.join(srcDir, 'parts')
+  const dataFile = path.join(srcDir, 'data.json')
+  const parts = fs.existsSync(partsDir) ? fs.readdirSync(partsDir).filter(f => f.endsWith('.html')).sort() : []
+  if (!parts.length && !fs.existsSync(contentFile)) die(`no ${contentFile} and no ${partsDir}/*.html`)
+  if (!fs.existsSync(dataFile)) die(`no ${dataFile}`)
+  const template = fs.readFileSync(path.join(__dirname, '..', 'skills', 'guide', 'template.html'), 'utf8')
+
+  let data
+  try {
+    data = JSON.parse(fs.readFileSync(dataFile, 'utf8'))
+  } catch (err) {
+    die(`data.json is not valid JSON: ${err.message}`)
+  }
+  if (!data.title) errors.push('data.json needs a "title"')
+  if (!data.key) data.key = `guide:${slug(data.title) || 'untitled'}`
+
+  const raw = parts.length ? parts.map(f => fs.readFileSync(path.join(partsDir, f), 'utf8')).join('\n') : fs.readFileSync(contentFile, 'utf8')
+  const content = inlineImages(raw, srcDir)
+  if (/<!--@CONTENT@-->|\/\*@DATA@\*\//.test(content)) errors.push('the content contains a template marker; it should hold only the sections')
+  const summary = check(content, data)
+
+  if (errors.length) {
+    console.log('FAILED')
+    for (const e of errors) console.log(`- error: ${e}`)
+    for (const w of warnings) console.log(`- warning: ${w}`)
+    process.exit(1)
+  }
+
+  const escTitle = String(data.title).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])
+  const json = JSON.stringify(data).replace(/</g, '\\u003c')
+  const html = template
+    .replace('/*@TITLE@*/', () => escTitle)
+    .replace('/*@DATA@*/', () => json)
+    .replace('<!--@CONTENT@-->', () => content)
+  fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true })
+  fs.writeFileSync(out, html)
+
+  const mods = summary.sections.filter(s => s.id !== 'home').length
+  const learned = summary.nodes.filter(n => n.learned).length
+  console.log('BUILT')
+  console.log(`- ${mods} modules, ${summary.checks} check questions, ${summary.practice} practice problems`)
+  console.log(`- map: ${summary.nodes.length} ideas (${learned} already in the knowledge graph), ${summary.edges.length} links`)
+  console.log(`- ${(html.length / 1024).toFixed(0)} KB, progress key "${data.key}"`)
+  for (const w of warnings) console.log(`- warning: ${w}`)
+  console.log(`path: ${path.resolve(out)}`)
+}
+
+main()

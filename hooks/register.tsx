@@ -88,6 +88,10 @@ import {
   GRAPH_PROPOSITIONS_TOOL,
   GRAPH_SESSIONS_DESCRIPTION,
   GRAPH_SESSIONS_TOOL,
+  GUIDE_PATHS_DESCRIPTION,
+  GUIDE_PATHS_SCHEMA,
+  GUIDE_PATHS_TOOL,
+  guideSlug,
   PLAN_DESCRIPTION,
   PLAN_SCHEMA,
   PLAN_TOOL,
@@ -281,6 +285,30 @@ async function learnDir($: EngineInterface): Promise<string> {
 }
 
 const graphDir = async ($: EngineInterface) => `${await learnDir($)}/graph`
+
+// A study guide: <learnDir>/guides/<slug>.html, built from .src/<slug>/.
+async function guidePathsText($: EngineInterface, subject: string): Promise<string> {
+  if (!subject.trim()) throw new Error('name the subject')
+  const dir = `${await learnDir($)}/guides`
+  const slug = guideSlug(subject)
+  const src = `${dir}/.src/${slug}`
+  await mkdirs($, src)
+  const out = `${dir}/${slug}.html`
+  const built = await $.fs.exists(out)
+  const sources = (await $.fs.exists(`${src}/data.json`)) || (await $.fs.exists(`${src}/content.html`))
+  const bin = `${$.plugin.root}/bin`
+  return [
+    `guide: ${out}`,
+    `sources: ${src}  (write data.json and parts/NN-<module>.html here, one file per section, home first; put images here too)`,
+    `progress key: guide:${slug}  (use it as data.json's "key", so saved progress carries over between rebuilds)`,
+    built || sources
+      ? `existing: ${built ? 'a built guide' : 'no built guide'}, ${sources ? 'sources from an earlier build (read them: refresh rather than start over)' : 'no sources'}`
+      : 'existing: none (a new guide)',
+    `build: ${bin}/build-guide ${src} ${src}/preview.html`,
+    `test: ${bin}/test-demo ${src}/preview.html`,
+    `template reference: ${$.plugin.root}/skills/guide/template.html`,
+  ].join('\n')
+}
 
 async function mkdirs($: EngineInterface, dir: string): Promise<void> {
   const mk = await $.process.run(['mkdir', '-p', dir])
@@ -828,6 +856,8 @@ async function runTool($: EngineInterface, e: any): Promise<string> {
       return findText(await loadGraph($), String(e.query ?? '*'))
     case GRAPH_EXTRACT_TOOL:
       return startExtraction($)
+    case GUIDE_PATHS_TOOL:
+      return guidePathsText($, String(e.subject ?? ''))
     default:
       throw new Error(`unknown tool ${e.tool}`)
   }
@@ -877,6 +907,7 @@ const HELP = [
   'The learning setup is built in:',
   '- /learn:teach <topic> — probe what you know, plan, and teach; opens a lesson note in Obsidian',
   '- /learn:practice [topic] — practice problems on what you have learned',
+  '- /learn:guide <subject> — build a study guide website for a whole subject: modules, quizzes, practice, a progress map',
   '- /map — show the lesson plan map',
   '- /graph — extract this session into your knowledge graph; /graph-import <note.md> imports notes',
   '- /md-log <note.md>, /md-unlog — mirror the session into a note, or stop',
@@ -907,6 +938,7 @@ export const register: Register = (on, options) => {
     await $.tool.register({ name: 'graph_propositions', description: GRAPH_PROPOSITIONS_DESCRIPTION, inputSchema: GRAPH_PROPOSITIONS_SCHEMA })
     await $.tool.register({ name: 'graph_find', description: GRAPH_FIND_DESCRIPTION, inputSchema: GRAPH_FIND_SCHEMA })
     await $.tool.register({ name: 'graph_extract', description: GRAPH_EXTRACT_DESCRIPTION, inputSchema: { type: 'object', properties: {} } })
+    await $.tool.register({ name: 'guide_paths', description: GUIDE_PATHS_DESCRIPTION, inputSchema: GUIDE_PATHS_SCHEMA })
     await registerAgents($)
 
     const saved = (await $.store.get(await storeKey($))) as string | null | undefined
@@ -993,6 +1025,7 @@ export const register: Register = (on, options) => {
   on('tool.call', { tool: GRAPH_PROPOSITIONS_TOOL }, serveTool).catch(toolFailed)
   on('tool.call', { tool: GRAPH_FIND_TOOL }, serveTool).catch(toolFailed)
   on('tool.call', { tool: GRAPH_EXTRACT_TOOL }, serveTool).catch(toolFailed)
+  on('tool.call', { tool: GUIDE_PATHS_TOOL }, serveTool).catch(toolFailed)
 
   // The call rows never show what he must not see yet: no correct answers,
   // explanations or model solutions while he works.
