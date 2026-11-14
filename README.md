@@ -1,12 +1,35 @@
-# learn
+<h1 align="center">learn</h1>
+
+<p align="center"><b>Learn anything, one checked step.</b><br>A Claude Code plugin that teaches from where your understanding ends.</p>
+
+<p align="center">
+  <a href="https://judzos.github.io/claude-learn/"><img alt="Site and demos" src="https://img.shields.io/badge/site-judzos.github.io%2Fclaude--learn-2f6fde"></a>
+  <img alt="Version 0.2.2" src="https://img.shields.io/badge/version-0.2.2-2f6fde">
+  <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-555"></a>
+  <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-555">
+</p>
+
+<p align="center">
+  <a href="https://judzos.github.io/claude-learn/"><img alt="The learn site: a knowledge tree drawn in dots beside the install command" src="docs/media/site-hero.jpg" width="880"></a>
+</p>
+
+```
+/plugin install learn --marketplace judzos/claude-learn
+```
 
 ![learn: probe, plan, checked steps, knowledge graph](demo/learn-demo.gif)
-
-Site and demos: [judzos.github.io/claude-learn](https://judzos.github.io/claude-learn/)
 
 A learning harness for Claude Code: it measures where your understanding ends, plans a dependency map from there to your goal, and teaches one reasoning step at a time, checking each step before building on it. Practice sessions make what you learned come to mind without being named, and a knowledge graph in your Obsidian vault carries it across sessions.
 
 It is a port of [LearnHarness](https://github.com/amosblomqvist/learnharness) by Amos Blomqvist to Claude Code, so it runs on a Claude subscription instead of API keys. The teaching, probing, practice and extraction prompts come from LearnHarness and are adapted to Claude Code's tools.
+
+## Try it in the browser
+
+The [site](https://judzos.github.io/claude-learn/) has the lesson's opening question as a working quiz, and charts you can drag: why a 99% test can mean 9%, how the probe brackets your edge, the hint ladder, and the knowledge graph a lesson leaves behind.
+
+| | |
+| --- | --- |
+| [![The probe question, with your pick plotted against how sure you were](docs/media/site-probe.jpg)](https://judzos.github.io/claude-learn/#try) | [![1000 people as dots, and the chance a positive is real across base rates](docs/media/site-explorer.jpg)](https://judzos.github.io/claude-learn/#bayes) |
 
 ## What's in it
 
