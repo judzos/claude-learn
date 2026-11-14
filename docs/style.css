@@ -1,7 +1,7 @@
 /* Hallmark · shape: Workbench · genre: modern-minimal · theme: Cobalt (deal: manual) · job: try · draw: manual
  * hero: Stage · nav: edge-aligned · footer: mast · imagery: the product (two HyperFrames renders of the plugin in use, the lesson built as graphite panes, five charts drawn from the plugin's own rules) · signature: the lesson's probe question, answerable on the page, with the visitor's pick plotted and the 1000-glyph population that explains it · data: arithmetic and the skill files, the graph is a sample
  * modes: light+dark · axes: light/grotesk-sans/cool · posture: restrained · contrast: pass · fold: pass · v2.0.0 */
-/* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 · weakest: P, a plugin page argues little; leaned on the port to LearnHarness as the one claim a reader could weigh */
+/* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 · weakest: P, a plugin page argues little; leaned on the working quiz and charts as the claims a reader could weigh */
 /* Hallmark · waive 47a · the terminal window is inside media/*.mp4, not page markup · the videos are renders of the real CLI flow, made for the README */
 @import url("./tokens.css");
 @import url("./base.css");
@@ -127,10 +127,6 @@ tbody tr:first-child td { background: var(--color-accent-wash); }
 tbody tr:first-child td:first-child { padding-left: var(--space-md); }
 .caption { margin-top: var(--space-lg); font-size: var(--text-sm); color: var(--color-muted); }
 
-.port { padding-block: var(--section-gap); }
-.port__grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: calc(var(--gap-columns) * 3); align-items: start; }
-.port__lead { display: grid; gap: var(--space-lg); justify-items: start; }
-.port__lead .lead { color: var(--color-ink-2); }
 .rows { margin: 0; }
 .rows div { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 5fr); gap: var(--gap-columns); padding-block: var(--space-xl); border-top: var(--rule-hair) solid var(--color-rule); }
 .rows div:last-child { border-bottom: var(--rule-hair) solid var(--color-rule); }
@@ -153,6 +149,8 @@ tbody tr:first-child td:first-child { padding-left: var(--space-md); }
 .foot__mark { font: 600 clamp(4rem, 12vw, 10rem)/0.9 var(--font-display); letter-spacing: -0.045em; color: var(--color-ink); }
 .foot__links { display: flex; flex-wrap: wrap; gap: var(--space-sm) var(--space-xl); margin: var(--space-xl) 0 0; padding: 0; list-style: none; }
 .foot__links a { color: var(--color-ink); }
+.foot__credit { margin: var(--space-lg) 0 0; font-size: var(--text-sm); color: var(--color-muted); }
+.foot__credit a { color: var(--color-ink-2); }
 
 /* charts: shared parts */
 figure { margin: 0; }
@@ -311,7 +309,7 @@ html:not(.js) .kg__list button { pointer-events: none; }
 @media (max-width: 60rem) {
   .hero { min-height: 0; padding-block: min(100vw, 30rem) var(--space-3xl); padding-bottom: var(--space-3xl); }
   .field__toggle { bottom: auto; top: var(--space-md); }
-  .watch__grid, .switch__panel, .practice__grid, .port__grid, .head--split, .try__grid, .bayes, .edge__grid, .kg__grid, .ladder { grid-template-columns: minmax(0, 1fr); row-gap: var(--space-xl); }
+  .watch__grid, .switch__panel, .practice__grid, .head--split, .try__grid, .bayes, .edge__grid, .kg__grid, .ladder { grid-template-columns: minmax(0, 1fr); row-gap: var(--space-xl); }
   .kg__fig { order: -1; }
   .practice__text { order: -1; }
   .term { min-height: 0; padding: var(--space-lg); font-size: var(--text-sm); }
