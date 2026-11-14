@@ -3,7 +3,7 @@
   "owner": {
     "name": "judzos"
   },
-  "description": "learn: a Claude Code learning harness ported from LearnHarness",
+  "description": "learn: a learning harness for Claude Code",
   "plugins": [
     {
       "name": "learn",

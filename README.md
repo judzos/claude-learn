@@ -21,8 +21,6 @@
 
 A learning harness for Claude Code: it measures where your understanding ends, plans a dependency map from there to your goal, and teaches one reasoning step at a time, checking each step before building on it. Practice sessions make what you learned come to mind without being named, and a knowledge graph in your Obsidian vault carries it across sessions.
 
-It is a port of [LearnHarness](https://github.com/amosblomqvist/learnharness) by Amos Blomqvist to Claude Code, so it runs on a Claude subscription instead of API keys. The teaching, probing, practice and extraction prompts come from LearnHarness and are adapted to Claude Code's tools.
-
 ## Try it in the browser
 
 The [site](https://judzos.github.io/claude-learn/) has the lesson's opening question as a working quiz, and charts you can drag: why a 99% test can mean 9%, how the probe brackets your edge, the hint ladder, and the knowledge graph a lesson leaves behind.
@@ -68,7 +66,7 @@ The [site](https://judzos.github.io/claude-learn/) has the lesson's opening ques
 
 The graph lives in `<learning folder>/graph/`. The learning folder defaults to `~/Desktop/learn` and can be changed in the plugin settings.
 
-- `nodes.jsonl` and `chains.jsonl` follow LearnHarness's format. Propositions are true ideas about the world. Chains are premises that *jointly* entail a conclusion.
+- `nodes.jsonl` and `chains.jsonl` follow the [LearnHarness](https://github.com/amosblomqvist/learnharness) graph format. Propositions are true ideas about the world. Chains are premises that *jointly* entail a conclusion.
 - Every proposition also gets a note in `graph/propositions/`, linked to the propositions it follows from and to the lesson note it was learned in, so Obsidian's graph view shows the structure.
 - Extraction uses the model set in the plugin's `graphModel` setting (`sonnet` by default). New findings are linked to propositions you already have, so the same idea learned twice becomes one node.
 
@@ -100,13 +98,8 @@ Diagrams need `rsvg-convert` (or ImageMagick) for SVG, and Node for Mermaid (`np
 4. Later, run `/learn:practice <topic>`.
 5. Before a test, run `/learn:guide <test or course>` and point it at the outline.
 
-## Differences from LearnHarness
+## Credits and license
 
-- Questions use Claude Code's own question popup. That popup holds at most 4 choices, so a quiz has 2 or 3 options plus "I don't know". That popup holds one question at a time, so confidence and thinking come as follow-up popups rather than a slider and a field beside the question.
-- The probe and teaching phases run in one agent, so the same `quiz` tool serves both. Once a plan exists, it requires `type` and `nodeId`.
-- Background jobs are Claude Code subagents. PDFs are read with Claude's own Read tool.
-- Not ported: API keys and the cost meter, dictation (your OS dictation works in any text field), and the in-app updater.
+The method builds on ideas from [LearnHarness](https://github.com/amosblomqvist/learnharness) by Amos Blomqvist.
 
-## License
-
-[AGPL-3.0](LICENSE). This plugin contains prompts and code adapted from [LearnHarness](https://github.com/amosblomqvist/learnharness), © Amos Blomqvist, licensed under the AGPL-3.0. The files that carry adapted material say so at the top.
+[AGPL-3.0](LICENSE). Some prompts and code are adapted from LearnHarness, © Amos Blomqvist, licensed under the AGPL-3.0. The files that carry adapted material say so at the top.
