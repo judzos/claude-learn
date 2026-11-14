@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>learn for Claude Code: a port of LearnHarness</title>
-  <meta name="description" content="A Claude Code plugin that probes what you know, plans the steps to your goal and checks each one. Ported from LearnHarness.">
+  <title>learn for Claude Code</title>
+  <meta name="description" content="A Claude Code plugin that probes what you know, plans the steps to your goal and checks each one.">
   <meta property="og:title" content="learn for Claude Code">
-  <meta property="og:description" content="Learn anything, one checked step at a time. A Claude Code port of LearnHarness.">
+  <meta property="og:description" content="Learn anything, one checked step at a time. A Claude Code plugin.">
   <meta property="og:image" content="https://judzos.github.io/claude-learn/media/learn-demo.jpg">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,7 +27,6 @@
           <li><a href="#loop">How a lesson runs</a></li>
           <li><a href="#practice">Practice</a></li>
           <li><a href="#guide">Study guides</a></li>
-          <li><a href="#port">LearnHarness</a></li>
           <li class="keep"><button class="key key--small mode-toggle" type="button" aria-pressed="false">Dark mode</button></li>
           <li class="keep"><a class="key key--small" href="#install">Install</a></li>
         </ul>
@@ -47,7 +46,7 @@
             <code id="cmd-hero">/plugin install learn --marketplace judzos/claude-learn</code>
             <button class="key key--primary copy" type="button" data-copy="cmd-hero">Copy</button>
           </div>
-          <p class="hero__port">A port of <a href="https://learnharness.ai/">LearnHarness</a> by Amos Blomqvist, so it runs on your Claude subscription. <a href="https://github.com/judzos/claude-learn">Source on GitHub</a></p>
+          <p class="hero__port">Runs on your Claude subscription. Open source. <a href="https://github.com/judzos/claude-learn">Source on GitHub</a></p>
         </div>
       </div>
     </section>
@@ -358,21 +357,6 @@
       </div>
     </section>
 
-    <section class="port" id="port">
-      <div class="container port__grid">
-        <div class="port__lead">
-          <h2>Built on LearnHarness</h2>
-          <p class="lead"><a href="https://learnharness.ai/">LearnHarness</a> is Amos Blomqvist’s open-source desktop app for learning with AI. This plugin brings its method into Claude Code.</p>
-          <a class="key" href="https://learnharness.ai/">Get the LearnHarness app</a>
-        </div>
-        <dl class="rows">
-          <div><dt>Kept</dt><dd>The teaching, probing, practice and extraction prompts, and the graph format.</dd></div>
-          <div><dt>Changed</dt><dd>Runs on a Claude subscription instead of API keys. Quizzes use Claude Code’s popup, and background jobs are subagents.</dd></div>
-          <div><dt>Left out</dt><dd>The cost meter, dictation and the in-app updater.</dd></div>
-        </dl>
-      </div>
-    </section>
-
     <section class="install graphite" id="install">
       <div class="container">
         <div class="head head--split">
@@ -404,10 +388,9 @@
       <p class="foot__mark">learn</p>
       <ul class="foot__links">
         <li><a href="https://github.com/judzos/claude-learn">Source on GitHub</a></li>
-        <li><a href="https://learnharness.ai/">LearnHarness</a></li>
-        <li><a href="https://github.com/amosblomqvist/learnharness">LearnHarness source</a></li>
         <li><a href="https://github.com/judzos/claude-learn/blob/main/LICENSE">AGPL-3.0 license</a></li>
       </ul>
+      <p class="foot__credit">Builds on ideas from <a href="https://learnharness.ai/">LearnHarness</a> by Amos Blomqvist.</p>
     </div>
   </footer>
 
