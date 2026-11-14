@@ -23,6 +23,7 @@
       <a class="wordmark" href="#top" aria-label="learn, home">learn <span>for Claude Code</span></a>
       <nav aria-label="Sections">
         <ul class="nav__links">
+          <li><a href="#try">Try a question</a></li>
           <li><a href="#loop">How a lesson runs</a></li>
           <li><a href="#practice">Practice</a></li>
           <li><a href="#port">LearnHarness</a></li>
@@ -36,6 +37,7 @@
   <main id="main">
     <section class="hero" id="top">
       <canvas class="field" aria-hidden="true"></canvas>
+      <button class="key key--small field__toggle" type="button" aria-pressed="true">Pause motion</button>
       <div class="container hero__grid">
         <div class="hero__text">
           <h1>Learn anything, one checked step.</h1>
@@ -46,10 +48,131 @@
           </div>
           <p class="hero__port">A port of <a href="https://learnharness.ai/">LearnHarness</a> by Amos Blomqvist, so it runs on your Claude subscription. <a href="https://github.com/judzos/claude-learn">Source on GitHub</a></p>
         </div>
+      </div>
+    </section>
+
+    <section class="watch" id="watch">
+      <div class="container watch__grid">
+        <div class="watch__text">
+          <h2>A lesson, start to finish</h2>
+          <p class="lead">Bayes’ theorem in Claude Code: the probe quiz, the plan map, a checked step and the knowledge graph.</p>
+        </div>
         <figure class="player cut">
-          <video class="player__video" src="media/learn-demo.mp4" poster="media/learn-demo.jpg" width="1920" height="1080" muted loop playsinline preload="metadata" data-autoplay aria-label="A lesson on Bayes' theorem in Claude Code: the probe quiz, the plan map, a checked step and the knowledge graph"></video>
+          <video class="player__video" src="media/learn-demo.mp4" poster="media/learn-demo.jpg" width="1920" height="1080" muted loop playsinline preload="metadata" data-autoplay aria-label="A lesson on Bayes’ theorem in Claude Code: the probe quiz, the plan map, a checked step and the knowledge graph"></video>
           <button class="player__toggle key key--small" type="button" aria-pressed="false">Play</button>
         </figure>
+      </div>
+    </section>
+
+    <section class="try" id="try">
+      <div class="container">
+        <div class="head head--split">
+          <h2>Take the probe question</h2>
+          <p class="lead">The lesson in the video opens with this one. Answer it, then say how sure you are.</p>
+        </div>
+        <div class="try__grid">
+          <div class="quiz term graphite cut">
+            <p class="term__head">learn quiz, probe</p>
+            <p id="quiz-q">1 in 1000 people have a disease. A test catches 99% of cases, with 1% false positives. You test positive. Chance you’re sick?</p>
+            <div class="quiz__opts" role="group" aria-labelledby="quiz-q">
+              <button type="button" class="opt" data-answer="99">About 99%</button>
+              <button type="button" class="opt" data-answer="50">About 50%</button>
+              <button type="button" class="opt" data-answer="9">About 9%</button>
+              <button type="button" class="opt opt--dim" data-answer="idk">I don’t know</button>
+            </div>
+            <div class="quiz__conf" role="group" aria-labelledby="quiz-c" hidden>
+              <p id="quiz-c" class="dim">How sure are you?</p>
+              <div class="quiz__row">
+                <button type="button" class="opt" data-conf="95">95%</button>
+                <button type="button" class="opt" data-conf="75">75%</button>
+                <button type="button" class="opt" data-conf="50">50%</button>
+                <button type="button" class="opt" data-conf="25">25%</button>
+              </div>
+            </div>
+            <p class="quiz__verdict" aria-live="polite"></p>
+            <p class="quiz__nojs dim">Correct: about 9%. The chart below shows why.</p>
+            <button type="button" class="opt quiz__again" hidden>Answer again</button>
+          </div>
+
+          <figure class="quad">
+            <figcaption>How Claude reads a pick: the verdict, against how sure you were</figcaption>
+            <div class="quad__plot">
+              <span class="quad__y quad__y--top">Correct</span>
+              <span class="quad__y quad__y--bottom">Wrong</span>
+              <div class="quad__field">
+                <div class="quad__cell"><strong>Fragile</strong><span>Knowledge that wobbles, or a lucky guess. One reinforcing touch.</span></div>
+                <div class="quad__cell quad__cell--end"><strong>Solid</strong><span>Move on to something harder.</span></div>
+                <div class="quad__cell"><strong>Honest gap</strong><span>A shaky near-miss. A small correction usually does it.</span></div>
+                <div class="quad__cell quad__cell--end quad__cell--signal"><strong>Committed misconception</strong><span>The strongest signal a probe can get. The lesson starts here.</span></div>
+                <i class="quad__chance" aria-hidden="true"></i>
+                <span class="quad__dot" hidden>you</span>
+              </div>
+              <div class="quad__axis num" aria-hidden="true">
+                <span data-at="25">25%</span><span data-at="50">50%</span><span data-at="75">75%</span><span data-at="95">95%</span>
+              </div>
+              <p class="quad__x">How sure you said you were. The notch at 33% is chance with three options: at or below it, you distrusted your own pick.</p>
+            </div>
+          </figure>
+        </div>
+
+        <div class="bayes" id="bayes">
+          <div class="bayes__read">
+            <h3>Why a 99% test can mean 9%</h3>
+            <p class="bayes__figure num"><output id="b-post" for="b-prev b-sens b-fp">9%</output></p>
+            <p class="bayes__line">of the people who test positive are sick.</p>
+            <div class="bayes__bar" aria-hidden="true"><span class="bayes__tp" id="b-bar-tp" style="flex-grow: 9"></span><span class="bayes__fp" id="b-bar-fp" style="flex-grow: 91"></span></div>
+            <ul class="legend">
+              <li><i class="sw sw--tp"></i><span><b class="num" id="b-tp">1</b> sick and positive</span></li>
+              <li><i class="sw sw--fp"></i><span><b class="num" id="b-fpn">10</b> healthy and positive</span></li>
+            </ul>
+            <div class="sliders">
+              <label for="b-prev">How common it is <output class="num" id="b-prev-o">1 in 1000</output></label>
+              <input type="range" id="b-prev" min="-4" max="-0.3" step="0.01" value="-3">
+              <label for="b-sens">Cases the test catches <output class="num" id="b-sens-o">99%</output></label>
+              <input type="range" id="b-sens" min="50" max="100" step="0.5" value="99">
+              <label for="b-fp">False positives <output class="num" id="b-fp-o">1%</output></label>
+              <input type="range" id="b-fp" min="0.1" max="20" step="0.1" value="1">
+            </div>
+            <button type="button" class="key key--small" id="b-reset">Reset to the question</button>
+          </div>
+          <figure class="bayes__pop">
+            <canvas id="b-pop" width="320" height="350" role="img" aria-label="1000 people as a grid of dots: the few who are sick and test positive, the larger group who are healthy and test positive, and everyone else"></canvas>
+            <figcaption>1000 people, one dot each, counts rounded.<span class="glyphs"><span><i class="sw sw--tp"></i> sick, positive</span><span><i class="sw sw--fp"></i> healthy, positive</span><span><i class="sw sw--fn"></i> sick, missed</span></span></figcaption>
+          </figure>
+          <figure class="bayes__curve">
+            <div class="plot" id="b-curve" role="img" aria-label="Line chart: the chance a positive result is real, rising with how common the condition is"></div>
+            <figcaption>The same test across base rates: the chance a positive is real. Drag “How common it is” to move along the line.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="edge" id="edge">
+      <div class="container">
+        <div class="head head--split">
+          <h2>How the probe finds your edge</h2>
+          <p class="lead">Each strand is bracketed between a floor you get right and a ceiling you miss. It opens near the top, and every next question splits the gap.</p>
+        </div>
+        <div class="edge__grid">
+          <figure class="edge__chart">
+            <div class="plot" id="e-plot" role="img" aria-label="Step chart: the band between floor and ceiling narrowing with each probe question until it closes on your edge"></div>
+            <figcaption>One strand drawn as 32 levels of difficulty. An illustration of the search, not a recording of one.</figcaption>
+          </figure>
+          <div class="edge__side">
+            <p class="edge__figure num"><output id="e-count" for="e-edge">6</output></p>
+            <p class="edge__line">questions to close the bracket.</p>
+            <div class="sliders">
+              <label for="e-edge">Where your understanding ends <output class="num" id="e-edge-o">level 18</output></label>
+              <input type="range" id="e-edge" min="1" max="31" step="1" value="18">
+            </div>
+            <ul class="legend">
+              <li><i class="g g--ok">✓</i><span>A question you got right lifts the floor</span></li>
+              <li><i class="g g--bad">✗</i><span>A miss lowers the ceiling</span></li>
+              <li><i class="sw sw--band"></i><span>The band is what Claude doesn’t know yet</span></li>
+            </ul>
+            <button type="button" class="key key--small" id="e-replay">Replay</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -70,13 +193,13 @@
           <div class="switch__panel" role="tabpanel" id="p-probe" aria-labelledby="t-probe">
             <div class="switch__copy">
               <h3>Find where it runs out</h3>
-              <p>Claude makes your goal concrete, then binary-searches each strand it depends on for a floor you get right and a ceiling you don't.</p>
+              <p>Claude makes your goal concrete, then binary-searches each strand it depends on for a floor you get right and a ceiling you don’t.</p>
             </div>
             <div class="term graphite cut">
               <p class="term__head">learn quiz, probe</p>
-              <p>1 in 1000 people have a disease. A test catches 99% of cases, with 1% false positives. You test positive. Chance you're sick?</p>
+              <p>1 in 1000 people have a disease. A test catches 99% of cases, with 1% false positives. You test positive. Chance you’re sick?</p>
               <ol class="term__opts">
-                <li class="is-picked">About 99%</li><li>About 50%</li><li>About 9%</li><li class="dim">I don't know</li>
+                <li class="is-picked">About 99%</li><li>About 50%</li><li>About 9%</li><li class="dim">I don’t know</li>
               </ol>
               <p><span class="bad">✗</span> About 99%, you were 95% sure. Correct: about 9%.</p>
             </div>
@@ -92,8 +215,8 @@
               <ul class="term__map">
                 <li><span class="ok">✓</span> Conditional probability</li>
                 <li class="is-now"><span class="tok">●</span> Base rates <span class="dim">needs conditional probability</span></li>
-                <li><span class="dim">○</span> Bayes' rule <span class="dim">needs both above</span></li>
-                <li><span class="dim">○</span> Reading a test result <span class="dim">needs Bayes' rule</span></li>
+                <li><span class="dim">○</span> Bayes’ rule <span class="dim">needs both above</span></li>
+                <li><span class="dim">○</span> Reading a test result <span class="dim">needs Bayes’ rule</span></li>
               </ul>
               <p class="dim">Type /map to see where you are.</p>
             </div>
@@ -109,7 +232,7 @@
               <p>1000 people take that test. About how many of them test positive?</p>
               <p><span class="ok">✓</span> About 11, you were 75% sure.</p>
               <p class="dim">1 true positive plus about 10 false positives. The rare condition sets the odds.</p>
-              <p><span class="tok">●</span> Next step: Bayes' rule.</p>
+              <p><span class="tok">●</span> Next step: Bayes’ rule.</p>
             </div>
           </div>
 
@@ -132,8 +255,35 @@
       </div>
     </section>
 
+    <section class="kg" id="graph">
+      <div class="container">
+        <div class="head head--split">
+          <h2>What a lesson leaves behind</h2>
+          <p class="lead">Propositions, and chains of premises that jointly entail a conclusion. This is the graph the Bayes lesson and one practice session would leave in your vault.</p>
+        </div>
+        <div class="kg__grid">
+          <div class="kg__side">
+            <ol class="kg__list">
+              <li><button type="button" data-node="1">P(A | B) is the share of B that is also A.</button></li>
+              <li><button type="button" data-node="2">A base rate is how common something is before any evidence.</button></li>
+              <li><button type="button" data-node="3">A rare condition makes most positives false.</button></li>
+              <li><button type="button" data-node="4">P(A | B) = P(B | A) P(A) / P(B)</button></li>
+              <li><button type="button" data-node="5">A 99% test can mean 9%.</button></li>
+              <li><button type="button" data-node="6">A spam flag means little until you know how much mail is spam.</button></li>
+            </ol>
+            <p class="kg__detail" id="kg-detail" aria-live="polite">Select a proposition to see what it follows from.</p>
+          </div>
+          <figure class="kg__fig cut">
+            <svg id="kg" viewBox="0 0 720 500" role="img" aria-label="The knowledge graph: six numbered propositions joined by arrows from premises to conclusions, and two lesson notes they were learned in"></svg>
+            <figcaption>Drag a node. Arrows run from premises to the conclusion they entail together; squares are the notes each idea was learned in.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
     <section class="practice" id="practice">
-      <div class="container practice__grid">
+      <div class="container">
+      <div class="practice__grid">
         <figure class="player cut">
           <video class="player__video" src="media/practice-demo.mp4" poster="media/practice-demo.jpg" width="1920" height="1080" muted loop playsinline preload="none" data-autoplay aria-label="A practice session: a spam-filter problem, two hints from the ladder, a correct answer and a retest queued"></video>
           <button class="player__toggle key key--small" type="button" aria-pressed="false">Play</button>
@@ -142,10 +292,30 @@
           <h2>Practice that never names the idea</h2>
           <p class="lead"><code>/learn:practice</code> poses problems where what you learned has to come to mind on its own.</p>
           <dl class="facts">
-            <div><dt>A hidden answer</dt><dd>Claude solves each problem first and shows the solution only after it's concluded.</dd></div>
+            <div><dt>A hidden answer</dt><dd>Claude solves each problem first and shows the solution only after it’s concluded.</dd></div>
             <div><dt>Six rungs of hints</dt><dd>From “re-read the givens” to a worked step, one rung per request.</dd></div>
             <div><dt>Retests</dt><dd>Anything missed comes back in a new form before the session ends.</dd></div>
           </dl>
+        </div>
+      </div>
+        <div class="ladder">
+          <div class="ladder__copy">
+            <h3>The hint ladder</h3>
+            <p>Each rung gives up one more thing you could have found yourself, so help stops at the first one that unblocks you.</p>
+            <p class="ladder__read" id="ladder-read" aria-live="polite"><strong>R0, attention redirect.</strong> “Re-read the second given.” It costs nothing: everything is still yours to find.</p>
+          </div>
+          <div class="ladder__chart">
+            <div class="ladder__cols" aria-hidden="true"><span>Where to look</span><span>The pattern</span><span>The cluster</span><span>The proposition</span><span>The move</span><span>The worked step</span></div>
+            <ol class="ladder__rungs">
+              <li><button type="button" data-rung="0" aria-pressed="true"><span class="ladder__name">R0</span><span class="ladder__cells" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="visually-hidden">Attention redirect</span></button></li>
+              <li><button type="button" data-rung="1" aria-pressed="false"><span class="ladder__name">R1</span><span class="ladder__cells" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="visually-hidden">Pattern re-description</span></button></li>
+              <li><button type="button" data-rung="2" aria-pressed="false"><span class="ladder__name">R2</span><span class="ladder__cells" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="visually-hidden">Candidate class</span></button></li>
+              <li><button type="button" data-rung="3" aria-pressed="false"><span class="ladder__name">R3</span><span class="ladder__cells" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="visually-hidden">The proposition, named</span></button></li>
+              <li><button type="button" data-rung="4" aria-pressed="false"><span class="ladder__name">R4</span><span class="ladder__cells" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="visually-hidden">The move outlined</span></button></li>
+              <li><button type="button" data-rung="5" aria-pressed="false"><span class="ladder__name">R5</span><span class="ladder__cells" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="visually-hidden">The worked step</span></button></li>
+            </ol>
+            <p class="caption">Filled cells are what the hint hands you; empty ones are still yours. A problem that needed only R0 or R1 was about right. R3 and up means it was over your edge.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -158,7 +328,7 @@
           <tbody>
             <tr><td><code>/learn:teach &lt;topic&gt;</code></td><td>Probe, plan and teach a lesson</td></tr>
             <tr><td><code>/learn:practice [topic]</code></td><td>Problems on what you already learned</td></tr>
-            <tr><td><code>/map</code></td><td>Show the lesson's plan map</td></tr>
+            <tr><td><code>/map</code></td><td>Show the lesson’s plan map</td></tr>
             <tr><td><code>/graph</code></td><td>Add this session to the knowledge graph</td></tr>
             <tr><td><code>/md-log &lt;note.md&gt;</code></td><td>Mirror the session into an Obsidian note</td></tr>
           </tbody>
@@ -171,12 +341,12 @@
       <div class="container port__grid">
         <div class="port__lead">
           <h2>Built on LearnHarness</h2>
-          <p class="lead"><a href="https://learnharness.ai/">LearnHarness</a> is Amos Blomqvist's open-source desktop app for learning with AI. This plugin brings its method into Claude Code.</p>
+          <p class="lead"><a href="https://learnharness.ai/">LearnHarness</a> is Amos Blomqvist’s open-source desktop app for learning with AI. This plugin brings its method into Claude Code.</p>
           <a class="key" href="https://learnharness.ai/">Get the LearnHarness app</a>
         </div>
         <dl class="rows">
           <div><dt>Kept</dt><dd>The teaching, probing, practice and extraction prompts, and the graph format.</dd></div>
-          <div><dt>Changed</dt><dd>Runs on a Claude subscription instead of API keys. Quizzes use Claude Code's popup, and background jobs are subagents.</dd></div>
+          <div><dt>Changed</dt><dd>Runs on a Claude subscription instead of API keys. Quizzes use Claude Code’s popup, and background jobs are subagents.</dd></div>
           <div><dt>Left out</dt><dd>The cost meter, dictation and the in-app updater.</dd></div>
         </dl>
       </div>
@@ -221,5 +391,6 @@
   </footer>
 
   <script src="app.js" defer></script>
+  <script src="charts.js" defer></script>
 </body>
 </html>
