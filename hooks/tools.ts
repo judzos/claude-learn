@@ -12,6 +12,7 @@ export const GRAPH_SESSIONS_TOOL = 'mcp__learn__graph_sessions'
 export const GRAPH_PROPOSITIONS_TOOL = 'mcp__learn__graph_propositions'
 export const GRAPH_FIND_TOOL = 'mcp__learn__graph_find'
 export const GRAPH_EXTRACT_TOOL = 'mcp__learn__graph_extract'
+export const GUIDE_PATHS_TOOL = 'mcp__learn__guide_paths'
 
 const ROLE_FIELDS = {
   type: {
@@ -215,11 +216,32 @@ export const GRAPH_FIND_SCHEMA = {
 
 export const GRAPH_EXTRACT_DESCRIPTION = `Extract what this session has taught so far into the learner's knowledge graph (propositions and the reasoning chains that derive them, linked to what the graph already holds). Runs in the background and is incremental: passages already extracted are skipped. Call it when a lesson wraps up. Do not wait for it; it reports to him when done.`
 
+export const GUIDE_PATHS_DESCRIPTION = `Where a /learn:guide study guide lives, for one subject: the finished guide's path in the learning folder, its source folder (content.html, data.json and any images, kept so the guide can be rebuilt or refreshed), whether a guide for this subject already exists, and the plugin's build and test commands. Creates the folders. Call it once at the start of a guide.`
+
+export const GUIDE_PATHS_SCHEMA = {
+  type: 'object',
+  properties: { subject: { type: 'string', description: 'The subject, short (e.g. "Cal 2 test 2"); it becomes the file name.' } },
+  required: ['subject'],
+}
+
+export function guideSlug(subject: string): string {
+  return (
+    subject
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60)
+      .replace(/-+$/, '') || 'guide'
+  )
+}
+
 // The makers render through the plugin's own scripts: those run without a
 // prompt, with plain arguments only (no shell syntax that could chain more).
 export function isPluginScript(root: string, command: string): boolean {
   const script = `${root}/bin/`
   if (!command.startsWith(script)) return false
   const rest = command.slice(script.length)
-  return /^(render-viz|test-demo)( +([A-Za-z0-9_./~@%+=,:-]+|'[^'\n]*'|"[^"$`\\\n]*"))*\s*$/.test(rest)
+  return /^(render-viz|test-demo|build-guide)( +([A-Za-z0-9_./~@%+=,:-]+|'[^'\n]*'|"[^"$`\\\n]*"))*\s*$/.test(rest)
 }
