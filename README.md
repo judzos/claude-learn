@@ -100,6 +100,6 @@ Diagrams need `rsvg-convert` (or ImageMagick) for SVG, and Node for Mermaid (`np
 
 ## Credits and license
 
-The method builds on ideas from [LearnHarness](https://github.com/amosblomqvist/learnharness) by Amos Blomqvist.
+The method builds on ideas from [LearnHarness](https://github.com/amosblomqvist/learnharness).
 
 [AGPL-3.0](LICENSE). Some prompts and code are adapted from LearnHarness, © Amos Blomqvist, licensed under the AGPL-3.0. The files that carry adapted material say so at the top.
