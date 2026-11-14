@@ -3,7 +3,7 @@ import { expect, mock, test } from 'claude-code/testing'
 import { parseConfidence, quizResultText } from './format'
 import { applyFindings, mergeGraph, noteNames, propositionNote, teachingTexts, validateFindings, type NodeLine } from './graph'
 import { parsePlan, planStatuses, planSummary, type PlanTree } from './plan'
-import { isPluginScript } from './tools'
+import { guideSlug, isPluginScript } from './tools'
 
 const PLAN = `graph TD
   limits[Limits] --> derivative[The derivative]
@@ -312,6 +312,34 @@ test('only the plugin scripts with plain arguments are pre-allowed', async () =>
   expect(isPluginScript('/p', '/p/bin/render-viz a.mmd; rm -rf ~')).toBe(false)
   expect(isPluginScript('/p', '/p/bin/render-viz $(whoami)')).toBe(false)
   expect(isPluginScript('/p', '/p/bin/other a')).toBe(false)
+  expect(isPluginScript('/p', '/p/bin/build-guide /l/guides/.src/cal-2 /l/guides/.src/cal-2/preview.html')).toBe(true)
+  expect(isPluginScript('/p', '/p/bin/build-guide a b && rm x')).toBe(false)
+})
+
+// --- study guides ---
+
+test('guide slugs are short, plain file names', async () => {
+  expect(guideSlug('Cal 2 · Test 2')).toBe('cal-2-test-2')
+  expect(guideSlug("L'Hôpital's rule")).toBe('l-hopital-s-rule')
+  expect(guideSlug('!!!')).toBe('guide')
+  expect(guideSlug('x'.repeat(80)).length).toBe(60)
+})
+
+test('guide_paths names the guide, its sources and the build commands', async ($, on) => {
+  const { files } = world(on)
+  const fresh = String((await $.tool.call({ tool: 'mcp__learn__guide_paths', subject: 'Cell energy' } as any)).result)
+  expect(fresh).toContain('guide: /home/u/Desktop/learn/guides/cell-energy.html')
+  expect(fresh).toContain('sources: /home/u/Desktop/learn/guides/.src/cell-energy')
+  expect(fresh).toContain('progress key: guide:cell-energy')
+  expect(fresh).toContain('existing: none')
+  expect(fresh).toMatch(/build: .*\/bin\/build-guide \/home\/u\/Desktop\/learn\/guides\/.src\/cell-energy /)
+
+  files['/home/u/Desktop/learn/guides/.src/cell-energy/data.json'] = '{}'
+  const again = String((await $.tool.call({ tool: 'mcp__learn__guide_paths', subject: 'Cell energy' } as any)).result)
+  expect(again).toContain('sources from an earlier build')
+
+  const empty = await $.tool.call({ tool: 'mcp__learn__guide_paths', subject: ' ' } as any)
+  expect(empty.deny).toMatch(/name the subject/)
 })
 
 test('session start registers the tools, commands and agents, with the plugin path filled in', async ($, on) => {
@@ -341,6 +369,7 @@ test('session start registers the tools, commands and agents, with the plugin pa
   await $.session.start({ cwd: '/home/u/elsewhere', surface: null, isInteractive: false } as any)
   expect(tools).toContain('quiz')
   expect(tools).toContain('graph_extract')
+  expect(tools).toContain('guide_paths')
   expect(commands).toEqual(['learn', 'md-log', 'md-unlog', 'map', 'graph', 'graph-import'])
   expect(agents.length).toBe(1)
   expect(agents[0].description).toBe('Builds a demo: tested')

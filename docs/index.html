@@ -26,6 +26,7 @@
           <li><a href="#try">Try a question</a></li>
           <li><a href="#loop">How a lesson runs</a></li>
           <li><a href="#practice">Practice</a></li>
+          <li><a href="#guide">Study guides</a></li>
           <li><a href="#port">LearnHarness</a></li>
           <li class="keep"><button class="key key--small mode-toggle" type="button" aria-pressed="false">Dark mode</button></li>
           <li class="keep"><a class="key key--small" href="#install">Install</a></li>
@@ -320,14 +321,34 @@
       </div>
     </section>
 
+    <section class="practice guide" id="guide">
+      <div class="container">
+      <div class="practice__grid">
+        <figure class="guide__shot cut">
+          <img src="media/guide-sample.jpg" width="1100" height="900" loading="lazy" alt="A study guide's home page: module tiles with checks done and knowledge-graph status, and a progress map of the subject's ideas, with ideas already in the knowledge graph shown green">
+        </figure>
+        <div class="practice__text">
+          <h2>A study guide for the whole subject</h2>
+          <p class="lead"><code>/learn:guide &lt;subject&gt;</code> reads your outline, slides and past tests, then builds one HTML page that covers it all.</p>
+          <dl class="facts">
+            <div><dt>A module per topic</dt><dd>The idea, the method, worked examples revealed step by step, check-yourself questions with instant feedback, and practice with hidden solutions.</dd></div>
+            <div><dt>Asks first</dt><dd>How detailed you want it, and whether to add diagrams, a day-by-day plan, a timed mock test or flashcards.</dd></div>
+            <div><dt>A progress map</dt><dd>The subject’s ideas, with the ones already in your knowledge graph shown green. Modules you finish get a tick, and progress saves in your browser.</dd></div>
+          </dl>
+        </div>
+      </div>
+      </div>
+    </section>
+
     <section class="commands" aria-labelledby="commands-h">
       <div class="container">
-        <h2 id="commands-h">Five commands to know</h2>
+        <h2 id="commands-h">Six commands to know</h2>
         <table>
           <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
           <tbody>
             <tr><td><code>/learn:teach &lt;topic&gt;</code></td><td>Probe, plan and teach a lesson</td></tr>
             <tr><td><code>/learn:practice [topic]</code></td><td>Problems on what you already learned</td></tr>
+            <tr><td><code>/learn:guide &lt;subject&gt;</code></td><td>Build a study guide website for a whole subject</td></tr>
             <tr><td><code>/map</code></td><td>Show the lesson’s plan map</td></tr>
             <tr><td><code>/graph</code></td><td>Add this session to the knowledge graph</td></tr>
             <tr><td><code>/md-log &lt;note.md&gt;</code></td><td>Mirror the session into an Obsidian note</td></tr>

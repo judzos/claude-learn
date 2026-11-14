@@ -109,6 +109,8 @@ html:not(.js) .switch__panel + .switch__panel { margin-top: var(--space-2xl); }
 .practice__grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--space-3xl); align-items: center; }
 .practice__text { display: grid; gap: var(--space-lg); }
 .practice__text .lead { color: var(--color-ink-2); }
+.guide__shot { margin: 0; overflow: hidden; box-shadow: var(--shadow-card), var(--shadow-lift); }
+.guide__shot img { display: block; width: 100%; height: auto; }
 .facts { display: grid; margin: var(--space-sm) 0 0; }
 .facts div { display: grid; gap: var(--space-2xs); padding-block: var(--space-md); border-top: var(--rule-hair) solid var(--color-rule); }
 .facts dt { font: 500 var(--text-lg)/1.2 var(--font-display); }
